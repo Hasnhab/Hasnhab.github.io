@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hasan Habeeb | Offensive CyberSecurity Researcher</title>
+
+<meta name="description" content="Offensive security tooling and protocol analysis platforms engineered for red team research and attack surface exploration.">
+<meta name="author" content="Hasan Habeeb">
+
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
+<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
+
+<style>
+:root {
+    --bg: #03060f;
+    --surface: #0b1122;
+    --glass: rgba(11, 17, 34, 0.78);
+    --border: #1b2742;
+    --text: #e7f6ff;
+    --muted: #8fa8c8;
+    --accent: #00f5ff;
+    --neon: #00ffe1;
+    --radius: 22px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.65;
+    overflow-x: hidden;
+}
+
+.grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 52px 52px;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: -1;
+}
+
+header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 9999;
+    background: var(--glass);
+    backdrop-filter: blur(22px);
+    border-bottom: 1px solid var(--border);
+}
+
+.nav-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+    height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1.4px;
+    color: var(--accent);
+    text-shadow: 0 0 12px rgba(0,245,255,0.4);
+}
+
+.nav-links {
+    display: flex;
+    gap: 46px;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.nav-links a::after {
+    content:'';
+    position:absolute;
+    height:1px;
+    left:0;
+    bottom:-6px;
+    width:0;
+    background: var(--accent);
+    transition: width 0.35s ease;
+}
+
+.nav-links a:hover {
+    color: var(--accent);
+}
+
+.nav-links a:hover::after {
+    width:100%;
+}
+
+.hamburger {
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    cursor:pointer;
+}
+
+.hamburger span {
+    width:28px;
+    height:2px;
+    background: var(--accent);
+    transition: transform 0.35s ease;
+}
+
+.mobile-menu {
+    position: fixed;
+    top: 86px;
+    left:0;
+    right:0;
+    background: var(--surface);
+    border-top:1px solid var(--border);
+    padding:36px 32px;
+    display:none;
+    flex-direction:column;
+    gap:26px;
+}
+
+.mobile-menu a {
+    color: var(--text);
+    text-decoration:none;
+    font-size:18px;
+}
+
+.mobile-menu.active { display:flex; }
+
+.hero {
+    min-height:100vh;
+    padding-top:86px;
+    display:flex;
+    align-items:center;
+}
+
+.hero-content {
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 32px;
+    display:grid;
+    grid-template-columns:1fr 460px;
+    gap:80px;
+    align-items:center;
+}
+
+.hero-text h1 {
+    font-size:clamp(52px,7vw,92px);
+    font-weight:700;
+    line-height:0.96;
+    letter-spacing:-3px;
+    text-shadow:0 0 30px var(--accent);
+    margin-bottom:16px;
+}
+
+.subtitle {
+    font-size:26px;
+    color: var(--accent);
+    letter-spacing:2px;
+    margin-bottom:32px;
+}
+
+.tagline {
+    color: var(--muted);
+    font-size:17.5px;
+    max-width:520px;
+}
+
+section {
+    padding:130px 0;
+}
+
+.section-header {
+    max-width:1280px;
+    margin:0 auto 14px;
+    padding:0 32px;
+    font-size:13px;
+    letter-spacing:3px;
+    color: var(--accent);
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+
+.section-header::before {
+    content:'';
+    height:1px;
+    flex:1;
+    background: linear-gradient(to right,var(--accent),transparent);
+}
+
+.tools-grid {
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 32px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(520px,1fr));
+    gap:32px;
+}
+
+.tool-card {
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    padding:48px 44px;
+    transition:transform 0.45s ease, box-shadow 0.45s ease;
+}
+
+.tool-card:hover {
+    transform:translateY(-12px);
+    box-shadow:0 0 70px -18px rgba(0,245,255,0.45);
+    border-color: var(--accent);
+}
+
+.tool-links {
+    margin-top:36px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+}
+
+.tool-links a {
+    color: var(--accent);
+    text-decoration:none;
+    font-size:14.5px;
+    border-bottom:1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tool-links a:hover {
+    border-bottom-color: var(--accent);
+    color:#fff;
+}
+
+.contact-buttons {
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:18px;
+    margin-top:42px;
+}
+
+.contact-btn {
+    border:1.5px solid var(--border);
+    color: var(--accent);
+    padding:18px 42px;
+    border-radius:999px;
+    text-decoration:none;
+    transition: all 0.35s ease;
+}
+
+.contact-btn:hover {
+    border-color: var(--accent);
+    background:rgba(0,245,255,0.08);
+    transform:translateY(-4px);
+}
+
+footer {
+    border-top:1px solid var(--border);
+    padding:60px 0 80px;
+    text-align:center;
+    color:#64748b;
+    font-size:13px;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+@media(max-width:992px){
+    .hero-content{
+        grid-template-columns:1fr;
+        text-align:center;
+    }
+    .tools-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:768px){
+    .nav-links{display:none;}
+    .hamburger{display:flex;}
+}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<header>
+    <div class="nav-container">
+        <div class="logo">HASAN HABEEB</div>
+        <div class="nav-links">
+            <a href="#tools">TOOLING</a>
+            <a href="#about">ABOUT</a>
+            <a href="#contact">CONTACT</a>
+        </div>
+        <div class="hamburger" id="hamburger">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#tools">TOOLING</a>
+        <a href="#about">ABOUT</a>
+        <a href="#contact">CONTACT</a>
+    </div>
+</header>
+
+<section class="hero">
+<div class="hero-content">
+<div class="hero-text">
+<h1>Hasan Habeeb</h1>
+<div class="subtitle">Offensive CyberSecurity Researcher</div>
+<div class="tagline">
+Offensive tooling and protocol analysis platforms engineered for security research, attack surface exploration, and deterministic analysis of modern web ecosystems.
+</div>
+</div>
+
+<div class="terminal-frame">
+<div class="terminal-header">
+<div class="terminal-dots"><span></span><span></span><span></span></div>
+<div style="margin-left:auto;font-size:12.5px;color:#64748b;">terminal • LIVE</div>
+</div>
+<div class="terminal-body" id="terminal"></div>
+</div>
+</div>
+</section>
+
+<section id="tools">
+<div class="section-header">OFFENSIVE TOOLING</div>
+<div class="tools-grid">
+
+<div class="tool-card">
+<h3>HarQL</h3>
+<p>GraphQL extension for Burp Suite enabling schema reconstruction and traffic analysis.</p>
+<div class="tool-links">
+<a href="https://github.com/Hasnhab/HarQL" target="_blank">Repository</a>
+<a href="https://github.com/Hasnhab/HarQL/releases" target="_blank">Releases</a>
+</div>
+</div>
+
+<div class="tool-card">
+<h3>graphql_harvester</h3>
+<p>Research-grade GraphQL intelligence harvester for traffic correlation and operation extraction.</p>
+<div class="tool-links">
+<a href="https://github.com/Hasnhab/graphql_harvester" target="_blank">Repository</a>
+</div>
+</div>
+
+</div>
+</section>
+
+<section id="about">
+<div class="section-header">ABOUT</div>
+<div class="tools-grid">
+<div class="tool-card">
+<p>
+Offensive cybersecurity research with focus on web application and API security. Methodology centered on reproducibility and responsible disclosure.
+</p>
+</div>
+</div>
+</section>
+
+<section id="contact">
+<div class="contact-section">
+<div class="section-header">CONTACT</div>
+<div class="contact-buttons">
+<a href="https://www.linkedin.com" target="_blank" class="contact-btn">LinkedIn</a>
+<a href="mailto:example@example.com" class="contact-btn">Email</a>
+<a href="https://www.instagram.com/hasan.a.habeeb" target="_blank" class="contact-btn">Instagram</a>
+<a href="https://www.facebook.com/HasanHabeb" target="_blank" class="contact-btn">Facebook</a>
+</div>
+</div>
+</section>
+
+<footer>
+© 2026 Hasan Habeeb — Offensive Security Engineering
+</footer>
+
+<script>
+const terminal = document.getElementById("terminal");
+
+const sequences = [
+[
+"[BOOT] Initializing security research environment...",
+"[OK] Loading analysis modules",
+"[OK] Attaching read-only traffic instrumentation",
+"[INFO] Data pipeline active",
+"[READY] Analyst control granted"
+],
+[
+"[SCAN] Mapping application surface...",
+"[SCAN] Detecting API endpoints",
+"[SCAN] Analyzing authentication flows",
+"[INFO] Read-only mode (no modifications)",
+"[OK] Analysis complete"
+],
+[
+"[STATS] Requests analyzed: 142",
+"[STATS] Endpoints mapped: 18",
+"[STATS] Authentication flows: 4",
+"[STATS] No anomalies detected",
+"[READY]"
+]
+];
+
+let sequenceIndex = 0;
+let lineIndex = 0;
+let charIndex = 0;
+let currentLine = "";
+let currentSequence = sequences[0];
+
+function typeWriter() {
+    if (lineIndex < currentSequence.length) {
+        if (charIndex < currentSequence[lineIndex].length) {
+            currentLine += currentSequence[lineIndex].charAt(charIndex);
+            terminal.innerHTML = currentLine + cursor();
+            charIndex++;
+            setTimeout(typeWriter, 28);
+        } else {
+            currentLine += "<br>";
+            terminal.innerHTML = currentLine + cursor();
+            lineIndex++;
+            charIndex = 0;
+            setTimeout(typeWriter, 650);
+        }
+    } else {
+        setTimeout(nextSequence, 3200);
+    }
+}
+
+function nextSequence() {
+    sequenceIndex = (sequenceIndex + 1) % sequences.length;
+    currentSequence = sequences[sequenceIndex];
+    lineIndex = 0;
+    charIndex = 0;
+    currentLine = "";
+    terminal.innerHTML = "";
+    typeWriter();
+}
+
+function cursor() {
+    return '<span style="display:inline-block;width:8px;height:18px;background:#00f5ff;vertical-align:middle;animation:blink 0.8s step-end infinite;"></span>';
+}
+
+typeWriter();
+
+const hamburger = document.getElementById("hamburger");
+const mobileMenu = document.getElementById("mobileMenu");
+
+hamburger.addEventListener("click", () => {
+    mobileMenu.classList.toggle("active");
+});
+
+document.querySelectorAll("#mobileMenu a").forEach(link => {
+    link.addEventListener("click", () => {
+        mobileMenu.classList.remove("active");
+    });
+});
+</script>
+
+</body>
+</html>
