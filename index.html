@@ -17,17 +17,18 @@
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
-    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
 
     <style>
         :root {
-            --bg: #05080f;
-            --surface: #0c1421;
-            --border: #1e2a3f;
-            --text: #e0f0ff;
-            --muted: #94a3c0;
-            --accent: #00d4ff;
-            --accent-dark: #00a8cc;
+            --bg: #05070f;
+            --surface: #0b1122;
+            --glass: rgba(11, 17, 34, 0.75);
+            --border: #1a253f;
+            --text: #e0f7ff;
+            --muted: #8fa6c8;
+            --accent: #00f5ff;
+            --neon: #00ffea;
         }
 
         * {
@@ -40,14 +41,20 @@
             background: var(--bg);
             color: var(--text);
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.7;
+            line-height: 1.65;
             overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1180px;
-            margin: 0 auto;
-            padding: 0 24px;
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 48px 48px;
+            opacity: 0.035;
+            pointer-events: none;
+            z-index: -1;
         }
 
         header {
@@ -55,164 +62,233 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            background: rgba(5, 8, 15, 0.95);
-            backdrop-filter: blur(16px);
+            z-index: 9999;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
         }
 
-        nav {
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+            height: 82px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 76px;
         }
 
         .logo {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            color: var(--accent);
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            color: var(--accent);
+            gap: 10px;
         }
 
-        .logo-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
+        .logo::after {
+            content: '';
+            width: 7px;
+            height: 7px;
+            background: var(--neon);
             border-radius: 50%;
-            box-shadow: 0 0 12px var(--accent);
+            box-shadow: 0 0 18px var(--neon);
         }
 
         .nav-links {
             display: flex;
-            gap: 40px;
+            gap: 48px;
             font-size: 14px;
             font-weight: 500;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         .nav-links a {
             color: var(--muted);
             text-decoration: none;
-            transition: color 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -4px;
+            left: 0;
+            background: var(--accent);
+            transition: width 0.4s ease;
         }
 
         .nav-links a:hover {
             color: var(--accent);
         }
 
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        .hamburger span {
+            width: 28px;
+            height: 2px;
+            background: var(--accent);
+            transition: all 0.4s ease;
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 82px;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            padding: 40px 32px;
+            display: none;
+            flex-direction: column;
+            gap: 28px;
+            font-size: 18px;
+            border-top: 1px solid var(--border);
+        }
+
+        .mobile-menu a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
         .hero {
             min-height: 100vh;
             display: flex;
             align-items: center;
-            padding-top: 76px;
+            position: relative;
+            padding-top: 82px;
         }
 
         .hero-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 460px;
             gap: 80px;
             align-items: center;
         }
 
         .hero-text h1 {
-            font-size: clamp(42px, 6vw, 68px);
+            font-size: clamp(52px, 7.5vw, 92px);
             font-weight: 700;
-            line-height: 1.05;
-            letter-spacing: -2px;
-            margin-bottom: 12px;
+            line-height: 0.95;
+            letter-spacing: -3.5px;
+            text-shadow: 
+                0 0 20px var(--accent),
+                0 0 40px var(--accent),
+                0 0 80px rgba(0, 245, 255, 0.4);
+            margin-bottom: 16px;
         }
 
-        .hero-text .title {
-            font-size: 21px;
+        .hero-text .subtitle {
+            font-size: 26px;
             color: var(--accent);
             font-weight: 500;
+            letter-spacing: 2px;
             margin-bottom: 32px;
-            letter-spacing: 1px;
         }
 
         .hero-text .tagline {
             font-size: 17.5px;
             max-width: 520px;
             color: var(--muted);
-            line-height: 1.75;
+            line-height: 1.85;
         }
 
-        .terminal-wrapper {
-            position: relative;
-            background: #0a0f17;
+        .terminal-frame {
+            background: #0a0f1a;
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.15),
-                        0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            box-shadow: 
+                0 0 0 1px rgba(0, 245, 255, 0.25),
+                0 40px 80px -20px rgba(0, 0, 0, 0.8);
         }
 
         .terminal-header {
             background: #111827;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .terminal-dots span {
-            display: inline-block;
-            width: 11px;
-            height: 11px;
-            border-radius: 50%;
-        }
-
-        .terminal-dots span:nth-child(1) { background: #ff5f57; }
-        .terminal-dots span:nth-child(2) { background: #ffbd2e; }
-        .terminal-dots span:nth-child(3) { background: #28c840; }
-
-        .terminal-body {
-            padding: 28px 32px;
-            font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", monospace;
-            font-size: 15px;
-            color: #67e8b5;
-            height: 320px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .terminal-line {
-            white-space: pre;
-            margin-bottom: 4px;
-        }
-
-        .cursor {
-            display: inline-block;
-            width: 8px;
-            height: 18px;
-            background: var(--accent);
-            vertical-align: middle;
-            animation: blink 0.8s step-end infinite;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0; }
-        }
-
-        section {
-            padding: 110px 0;
-        }
-
-        .section-header {
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 12px;
+            padding: 14px 24px;
             display: flex;
             align-items: center;
             gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .terminal-dots span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dots span:nth-child(1) { background: #ff5a5f; }
+        .terminal-dots span:nth-child(2) { background: #ffbd2e; }
+        .terminal-dots span:nth-child(3) { background: #27c93f; }
+
+        .terminal-body {
+            padding: 32px 36px;
+            font-family: ui-monospace, monospace;
+            font-size: 15.2px;
+            color: #67f0b8;
+            height: 340px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terminal-body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent 50%, rgba(103, 240, 184, 0.03) 50%);
+            background-size: 100% 6px;
+            pointer-events: none;
+            animation: scanline 6s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(300%); }
+        }
+
+        section {
+            padding: 130px 0;
+            position: relative;
+        }
+
+        .section-header {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--accent);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .section-header::before {
@@ -223,205 +299,258 @@
         }
 
         .tools-grid {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-            gap: 28px;
+            grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
+            gap: 32px;
         }
 
         .tool-card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 42px 36px;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            border-radius: 22px;
+            padding: 48px 44px;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 245, 255, 0.06), transparent);
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
 
         .tool-card:hover {
-            transform: translateY(-12px);
+            transform: translateY(-16px) scale(1.02);
             border-color: var(--accent);
-            box-shadow: 0 0 0 1px var(--accent),
-                        0 30px 60px -15px rgba(0, 212, 255, 0.25);
+            box-shadow: 0 0 60px -10px rgba(0, 245, 255, 0.45);
+        }
+
+        .tool-card:hover::before {
+            opacity: 1;
         }
 
         .tool-card h3 {
-            font-size: 26px;
+            font-size: 29px;
             font-weight: 700;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
             color: var(--text);
         }
 
         .tool-card p {
             color: var(--muted);
-            font-size: 15.5px;
-            line-height: 1.8;
+            font-size: 15.8px;
+            line-height: 1.85;
         }
 
         .tool-links {
-            margin-top: 32px;
+            margin-top: 38px;
             display: flex;
             flex-wrap: wrap;
-            gap: 18px;
+            gap: 22px;
         }
 
         .tool-links a {
             color: var(--accent);
-            font-size: 14px;
+            font-size: 14.5px;
             font-weight: 500;
             text-decoration: none;
-            padding-bottom: 4px;
+            padding: 6px 0;
             border-bottom: 1px solid transparent;
             transition: all 0.3s ease;
         }
 
         .tool-links a:hover {
-            border-bottom: 1px solid var(--accent);
-            color: #fff;
+            border-bottom-color: var(--accent);
+            color: #ffffff;
         }
 
         .about-content {
-            max-width: 780px;
-            font-size: 16.5px;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+            font-size: 17px;
             color: var(--muted);
-            line-height: 1.85;
+            line-height: 1.9;
+            max-width: 820px;
         }
 
-        .contact-grid {
+        .contact-section {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+            text-align: center;
+        }
+
+        .contact-buttons {
             display: flex;
+            justify-content: center;
             flex-wrap: wrap;
-            gap: 24px;
-            margin-top: 32px;
+            gap: 18px;
+            margin-top: 42px;
         }
 
         .contact-btn {
             background: transparent;
-            border: 1px solid var(--border);
+            border: 1.5px solid var(--border);
             color: var(--accent);
-            padding: 16px 32px;
+            padding: 18px 42px;
             border-radius: 9999px;
-            font-size: 14.5px;
+            font-size: 15px;
             font-weight: 500;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            min-width: 180px;
         }
 
         .contact-btn:hover {
-            background: rgba(0, 212, 255, 0.08);
             border-color: var(--accent);
-            transform: translateY(-2px);
+            background: rgba(0, 245, 255, 0.08);
+            transform: translateY(-4px);
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.3);
         }
 
         footer {
             border-top: 1px solid var(--border);
-            padding: 42px 0 60px;
+            padding: 60px 0 80px;
+            text-align: center;
             color: #64748b;
             font-size: 13px;
-            text-align: center;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 992px) {
             .hero-content {
                 grid-template-columns: 1fr;
                 gap: 60px;
+                text-align: center;
             }
             .tools-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .mobile-menu {
+                display: none;
+            }
+            .mobile-menu.active {
+                display: flex;
+            }
+            .terminal-body {
+                height: 280px;
+                padding: 24px 28px;
+                font-size: 14px;
             }
         }
     </style>
 </head>
 <body>
 
+    <div class="grid-bg"></div>
+
     <header>
-        <div class="container">
-            <nav>
-                <div class="logo">
-                    <span>HASAN HABEEB</span>
-                    <div class="logo-dot"></div>
-                </div>
-                <div class="nav-links">
-                    <a href="#tools">TOOLING</a>
-                    <a href="#about">ABOUT</a>
-                    <a href="#contact">CONTACT</a>
-                </div>
-            </nav>
+        <div class="nav-container">
+            <div class="logo">HASAN HABEEB</div>
+            
+            <div class="nav-links">
+                <a href="#tools">TOOLING</a>
+                <a href="#about">ABOUT</a>
+                <a href="#contact">CONTACT</a>
+            </div>
+
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+
+        <div class="mobile-menu" id="mobileMenu">
+            <a href="#tools">TOOLING</a>
+            <a href="#about">ABOUT</a>
+            <a href="#contact">CONTACT</a>
         </div>
     </header>
 
     <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-text">
-                    <h1>Hasan Habeeb</h1>
-                    <div class="title">Offensive CyberSecurity Researcher</div>
-                    <div class="tagline">
-                        Red team–oriented offensive security tooling and proxy extensions engineered for protocol dissection, runtime traffic manipulation, and precision attack automation. Focused on deterministic analysis and scalable attack surface expansion across modern web and API ecosystems.
-                    </div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Hasan Habeeb</h1>
+                <div class="subtitle">Offensive CyberSecurity Researcher</div>
+                <div class="tagline">
+                    Red team–oriented offensive security tooling and proxy extensions engineered for protocol dissection, runtime traffic manipulation, and precision attack automation. Focused on deterministic analysis and scalable attack surface expansion across modern web and API ecosystems.
                 </div>
+            </div>
 
-                <div class="terminal-wrapper">
-                    <div class="terminal-header">
-                        <div class="terminal-dots">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                        <div style="margin-left: auto; font-size: 12px; color: #64748b; font-family: monospace;">hasnhab@offsec-terminal</div>
+            <div class="terminal-frame">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
-                    <div class="terminal-body" id="terminal"></div>
+                    <div style="margin-left: auto; font-size: 12.5px; color: #64748b; font-family: monospace;">hasnhab@offsec-terminal • LIVE</div>
                 </div>
+                <div class="terminal-body" id="terminal"></div>
             </div>
         </div>
     </section>
 
     <section id="tools">
-        <div class="container">
-            <div class="section-header">OFFENSIVE TOOLING</div>
-            
-            <div class="tools-grid">
-                <div class="tool-card">
-                    <h3>HarQL</h3>
-                    <p>
-                        Advanced GraphQL Harvester extension for Burp Suite enabling deterministic extraction of operations, inferred schema reconstruction, traffic replay integration, and low-noise intelligence harvesting in non-introspectable production environments.
-                    </p>
-                    <div class="tool-links">
-                        <a href="https://github.com/Hasnhab/HarQL" target="_blank">Repository</a>
-                        <a href="https://github.com/Hasnhab/HarQL/releases/tag/HarQL_v1.0" target="_blank">Release v1.0</a>
-                        <a href="https://github.com/Hasnhab/HarQL/blob/main/README.md#demo--screenshots" target="_blank">Screenshots</a>
-                    </div>
+        <div class="section-header">OFFENSIVE TOOLING</div>
+        
+        <div class="tools-grid">
+            <div class="tool-card">
+                <h3>HarQL</h3>
+                <p>
+                    Advanced GraphQL Harvester extension for Burp Suite enabling deterministic extraction of operations, inferred schema reconstruction, traffic replay integration, and low-noise intelligence harvesting in non-introspectable production environments.
+                </p>
+                <div class="tool-links">
+                    <a href="https://github.com/Hasnhab/HarQL" target="_blank">Repository</a>
+                    <a href="https://github.com/Hasnhab/HarQL/releases/tag/HarQL_v1.0" target="_blank">Release v1.0</a>
+                    <a href="https://github.com/Hasnhab/HarQL/blob/main/README.md#demo--screenshots" target="_blank">Screenshots</a>
                 </div>
+            </div>
 
-                <div class="tool-card">
-                    <h3>graphql_harvester</h3>
-                    <p>
-                        Research-grade GraphQL intelligence harvester for mitmproxy, engineered for reproducible extraction and correlation of GraphQL operations, doc_ids, and runtime variables within production-scale traffic flows.
-                    </p>
-                    <div class="tool-links">
-                        <a href="https://github.com/Hasnhab/graphql_harvester" target="_blank">Repository</a>
-                    </div>
+            <div class="tool-card">
+                <h3>graphql_harvester</h3>
+                <p>
+                    Research-grade GraphQL intelligence harvester for mitmproxy, engineered for reproducible extraction and correlation of GraphQL operations, doc_ids, and runtime variables within production-scale traffic flows.
+                </p>
+                <div class="tool-links">
+                    <a href="https://github.com/Hasnhab/graphql_harvester" target="_blank">Repository</a>
                 </div>
             </div>
         </div>
     </section>
 
     <section id="about">
-        <div class="container">
-            <div class="section-header">ABOUT</div>
-            <div class="about-content">
-                <p>
-                    Offensive cybersecurity researcher with over four years of hands-on experience in web application, API, and infrastructure-facing security. Active contributor to the Meta Bug Bounty Program since 2021, with multiple validated vulnerability reports across GraphQL APIs, authentication flows, and enterprise gateway components.
-                    <br><br>
-                    Background in communications and electronics engineering, with a professional approach centered on deterministic methodology, reproducibility, and analyst-controlled tooling. Strong emphasis on ethical research, responsible disclosure, and precision-driven offensive engineering.
-                </p>
-            </div>
+        <div class="section-header">ABOUT</div>
+        <div class="about-content">
+            Offensive cybersecurity researcher with over four years of hands-on experience in web application, API, and infrastructure-facing security. Active contributor to the Meta Bug Bounty Program since 2021, with multiple validated vulnerability reports across GraphQL APIs, authentication flows, and enterprise gateway components.
+            <br><br>
+            Background in communications and electronics engineering, with a professional approach centered on deterministic methodology, reproducibility, and analyst-controlled tooling. Strong emphasis on ethical research, responsible disclosure, and precision-driven offensive engineering.
         </div>
     </section>
 
     <section id="contact">
-        <div class="container">
+        <div class="contact-section">
             <div class="section-header">CONTACT</div>
             
-            <div class="contact-grid">
+            <div class="contact-buttons">
                 <a href="https://www.linkedin.com/in/hasanhabeeb" target="_blank" class="contact-btn">LinkedIn</a>
                 <a href="https://www.facebook.com/HasanHabeb" target="_blank" class="contact-btn">Facebook</a>
                 <a href="https://www.instagram.com/hasan.a.habeeb" target="_blank" class="contact-btn">Instagram</a>
@@ -431,9 +560,7 @@
     </section>
 
     <footer>
-        <div class="container">
-            © 2026 Hasan Habeeb — Offensive Security Engineering
-        </div>
+        © 2026 Hasan Habeeb — Offensive Security Engineering
     </footer>
 
     <script>
@@ -446,37 +573,60 @@
             "[READY] Analyst control granted"
         ];
 
-        const terminal = document.getElementById("terminal");
         let lineIndex = 0;
         let charIndex = 0;
-        let currentLine = "";
+        let currentText = "";
+
+        const terminal = document.getElementById("terminal");
 
         function typeLine() {
             if (lineIndex < lines.length) {
                 if (charIndex < lines[lineIndex].length) {
-                    currentLine += lines[lineIndex].charAt(charIndex);
-                    terminal.innerHTML = currentLine + '<span class="cursor"></span>';
+                    currentText += lines[lineIndex].charAt(charIndex);
+                    terminal.innerHTML = currentText + '<span style="display:inline-block;width:8px;height:18px;background:#00f5ff;vertical-align:middle;animation:blink 0.7s step-end infinite;"></span>';
                     charIndex++;
-                    setTimeout(typeLine, 22);
+                    setTimeout(typeLine, 26);
                 } else {
-                    currentLine += "<br>";
-                    terminal.innerHTML = currentLine + '<span class="cursor"></span>';
+                    currentText += "<br>";
+                    terminal.innerHTML = currentText + '<span style="display:inline-block;width:8px;height:18px;background:#00f5ff;vertical-align:middle;animation:blink 0.7s step-end infinite;"></span>';
                     lineIndex++;
                     charIndex = 0;
-                    setTimeout(typeLine, 520);
+                    setTimeout(typeLine, 480);
                 }
             } else {
                 setTimeout(() => {
                     terminal.innerHTML = "";
                     lineIndex = 0;
                     charIndex = 0;
-                    currentLine = "";
+                    currentText = "";
                     typeLine();
-                }, 4200);
+                }, 3800);
             }
         }
 
-        window.onload = typeLine;
+        const hamburger = document.getElementById("hamburger");
+        const mobileMenu = document.getElementById("mobileMenu");
+
+        hamburger.addEventListener("click", () => {
+            hamburger.classList.toggle("active");
+            mobileMenu.classList.toggle("active");
+            
+            if (hamburger.classList.contains("active")) {
+                hamburger.style.transform = "rotate(90deg)";
+                hamburger.children[0].style.transform = "rotate(45deg) translate(6px, 6px)";
+                hamburger.children[1].style.opacity = "0";
+                hamburger.children[2].style.transform = "rotate(-45deg) translate(5px, -5px)";
+            } else {
+                hamburger.style.transform = "none";
+                hamburger.children[0].style.transform = "none";
+                hamburger.children[1].style.opacity = "1";
+                hamburger.children[2].style.transform = "none";
+            }
+        });
+
+        window.onload = () => {
+            typeLine();
+        };
     </script>
 </body>
 </html>
