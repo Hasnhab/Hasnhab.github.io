@@ -18,8 +18,10 @@
       script-src 'none';
       connect-src 'none';
       img-src https://raw.githubusercontent.com data:;
-      style-src 'self';
-      font-src 'none';
+      style-src 'self' 'unsafe-inline';
+      style-src-elem 'self' 'unsafe-inline';
+      style-src-attr 'self' 'unsafe-inline';
+      font-src 'self';
       media-src 'none';
       worker-src 'none';
       manifest-src 'none';
