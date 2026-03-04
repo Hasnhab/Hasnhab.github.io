@@ -18,7 +18,7 @@
       script-src 'none';
       connect-src 'none';
       img-src https://raw.githubusercontent.com data:;
-      style-src 'self';
+      style-src 'self' 'unsafe-inline';
       font-src 'none';
       media-src 'none';
       worker-src 'none';
@@ -88,6 +88,10 @@ a:hover {
   margin-top: 20px;
 }
 
+.header-panel {
+  margin-top: 20px;
+}
+
 .badge {
   color: var(--accent);
   font-weight: 600;
@@ -123,7 +127,7 @@ footer {
   <h1>Hasan Habeeb</h1>
   <div class="badge">Offensive CyberSecurity Researcher</div>
 
-  <div class="panel" style="margin-top:20px;">
+  <div class="panel header-panel">
     Red team–oriented offensive security tooling and proxy extensions engineered for protocol dissection,
     runtime traffic manipulation, and precision attack automation.
   </div>
