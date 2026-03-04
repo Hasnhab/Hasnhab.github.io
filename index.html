@@ -1,608 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasan Habeeb | Offensive CyberSecurity Researcher</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hasan Habeeb | Offensive CyberSecurity Researcher</title>
 
-    <meta name="description" content="Red team–oriented offensive security tooling and proxy extensions engineered for protocol dissection, runtime traffic manipulation, and precision attack automation.">
-    <meta name="author" content="Hasan Habeeb">
+<meta name="description" content="Offensive security tooling and protocol analysis platforms engineered for red team research and attack surface exploration.">
+<meta name="author" content="Hasan Habeeb">
 
-    <meta property="og:title" content="Hasan Habeeb | Offensive CyberSecurity Researcher">
-    <meta property="og:description" content="Offensive security tooling and proxy extensions for advanced protocol analysis and attack surface expansion.">
-    <meta property="og:type" content="website">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
+<meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
 
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self';">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
-    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains; preload">
+<style>
+:root {
+    --bg: #03060f;
+    --surface: #0b1122;
+    --glass: rgba(11, 17, 34, 0.78);
+    --border: #1b2742;
+    --text: #e7f6ff;
+    --muted: #8fa8c8;
+    --accent: #00f5ff;
+    --neon: #00ffe1;
+    --radius: 22px;
+}
 
-    <style>
-        :root {
-            --bg: #02050c;
-            --surface: #0a0f1f;
-            --glass: rgba(10, 15, 31, 0.82);
-            --border: #1c2a47;
-            --text: #e6f4ff;
-            --muted: #8ba4d0;
-            --accent: #00f0ff;
-            --neon-glow: #00f0ff;
-        }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.65;
+    overflow-x: hidden;
+}
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.68;
-            overflow-x: hidden;
-        }
+.grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 52px 52px;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: -1;
+}
 
-        .grid-bg {
-            position: fixed;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(28, 42, 71, 0.045) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(28, 42, 71, 0.045) 1px, transparent 1px);
-            background-size: 52px 52px;
-            pointer-events: none;
-            z-index: -1;
-        }
+header {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 9999;
+    background: var(--glass);
+    backdrop-filter: blur(22px);
+    border-bottom: 1px solid var(--border);
+}
 
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 9999;
-            background: var(--glass);
-            backdrop-filter: blur(28px);
-            border-bottom: 1px solid var(--border);
-        }
+.nav-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+    height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-        .nav-container {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 0 40px;
-            height: 88px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+.logo {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -1.4px;
+    color: var(--accent);
+    text-shadow: 0 0 12px rgba(0,245,255,0.4);
+}
 
-        .logo {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -1.8px;
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-shadow: 0 0 30px var(--neon-glow);
-        }
+.nav-links {
+    display: flex;
+    gap: 46px;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
 
-        .logo::after {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 22px var(--neon-glow), 0 0 44px var(--neon-glow);
-        }
+.nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    position: relative;
+    transition: color 0.3s;
+}
 
-        .nav-links {
-            display: flex;
-            gap: 52px;
-            font-size: 14.5px;
-            font-weight: 500;
-            letter-spacing: 1.2px;
-        }
+.nav-links a::after {
+    content:'';
+    position:absolute;
+    height:1px;
+    left:0;
+    bottom:-6px;
+    width:0;
+    background: var(--accent);
+    transition: width 0.35s ease;
+}
 
-        .nav-links a {
-            color: var(--muted);
-            text-decoration: none;
-            transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative;
-        }
+.nav-links a:hover {
+    color: var(--accent);
+}
 
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -6px;
-            left: 0;
-            width: 0;
-            height: 1.5px;
-            background: linear-gradient(to right, var(--accent), transparent);
-            transition: width 0.45s ease;
-        }
+.nav-links a:hover::after {
+    width:100%;
+}
 
-        .nav-links a:hover {
-            color: #ffffff;
-        }
+.hamburger {
+    display:none;
+    flex-direction:column;
+    gap:5px;
+    cursor:pointer;
+}
 
-        .nav-links a:hover::after {
-            width: 100%;
-        }
+.hamburger span {
+    width:28px;
+    height:2px;
+    background: var(--accent);
+    transition: transform 0.35s ease;
+}
 
-        .hamburger {
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            cursor: pointer;
-            z-index: 10000;
-        }
+.mobile-menu {
+    position: fixed;
+    top: 86px;
+    left:0;
+    right:0;
+    background: var(--surface);
+    border-top:1px solid var(--border);
+    padding:36px 32px;
+    display:none;
+    flex-direction:column;
+    gap:26px;
+}
 
-        .hamburger span {
-            width: 30px;
-            height: 2.5px;
-            background: var(--accent);
-            transition: all 0.45s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        }
+.mobile-menu a {
+    color: var(--text);
+    text-decoration:none;
+    font-size:18px;
+}
 
-        .mobile-menu {
-            position: fixed;
-            top: 88px;
-            left: 0;
-            right: 0;
-            background: var(--surface);
-            padding: 48px 40px;
-            display: none;
-            flex-direction: column;
-            gap: 32px;
-            font-size: 19px;
-            font-weight: 500;
-            border-top: 1px solid var(--border);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
-        }
+.mobile-menu.active { display:flex; }
 
-        .mobile-menu a {
-            color: var(--text);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
+.hero {
+    min-height:100vh;
+    padding-top:86px;
+    display:flex;
+    align-items:center;
+}
 
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding-top: 88px;
-            position: relative;
-        }
+.hero-content {
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 32px;
+    display:grid;
+    grid-template-columns:1fr 460px;
+    gap:80px;
+    align-items:center;
+}
 
-        .hero-content {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 0 40px;
-            display: grid;
-            grid-template-columns: 1fr 480px;
-            gap: 92px;
-            align-items: center;
-        }
+.hero-text h1 {
+    font-size:clamp(52px,7vw,92px);
+    font-weight:700;
+    line-height:0.96;
+    letter-spacing:-3px;
+    text-shadow:0 0 30px var(--accent);
+    margin-bottom:16px;
+}
 
-        .hero-text h1 {
-            font-size: clamp(56px, 7.8vw, 98px);
-            font-weight: 700;
-            line-height: 0.94;
-            letter-spacing: -4px;
-            text-shadow: 
-                0 0 25px var(--accent),
-                0 0 55px var(--accent),
-                0 0 95px rgba(0, 240, 255, 0.35);
-            margin-bottom: 18px;
-        }
+.subtitle {
+    font-size:26px;
+    color: var(--accent);
+    letter-spacing:2px;
+    margin-bottom:32px;
+}
 
-        .hero-text .subtitle {
-            font-size: 27px;
-            color: var(--accent);
-            font-weight: 500;
-            letter-spacing: 2.5px;
-            margin-bottom: 36px;
-        }
+.tagline {
+    color: var(--muted);
+    font-size:17.5px;
+    max-width:520px;
+}
 
-        .hero-text .tagline {
-            font-size: 17.8px;
-            max-width: 540px;
-            color: var(--muted);
-            line-height: 1.88;
-        }
+.terminal-frame {
+    background:#0a0f1a;
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow:0 40px 90px -20px rgba(0,0,0,0.8);
+}
 
-        .terminal-frame {
-            background: #080c18;
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 
-                0 0 0 1px rgba(0, 240, 255, 0.28),
-                0 45px 95px -25px rgba(0, 0, 0, 0.85),
-                inset 0 0 80px rgba(0, 240, 255, 0.035);
-        }
+.terminal-header {
+    background:#111827;
+    padding:14px 24px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border-bottom:1px solid var(--border);
+}
 
-        .terminal-header {
-            background: #111827;
-            padding: 16px 28px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            border-bottom: 1px solid var(--border);
-        }
+.terminal-dots span {
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    display:inline-block;
+}
 
-        .terminal-dots {
-            display: flex;
-            gap: 9px;
-        }
+.terminal-dots span:nth-child(1){background:#ff5a5f;}
+.terminal-dots span:nth-child(2){background:#ffbd2e;}
+.terminal-dots span:nth-child(3){background:#27c93f;}
 
-        .terminal-dots span {
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-        }
+.terminal-body {
+    padding:32px 36px;
+    font-family: ui-monospace, monospace;
+    font-size:15px;
+    color:#67f0b8;
+    height:340px;
+    position:relative;
+    overflow:hidden;
+}
 
-        .terminal-dots span:nth-child(1) { background: #ff5a5f; }
-        .terminal-dots span:nth-child(2) { background: #ffbd2e; }
-        .terminal-dots span:nth-child(3) { background: #27c93f; }
+section {
+    padding:130px 0;
+}
 
-        .terminal-body {
-            padding: 36px 40px;
-            font-family: ui-monospace, monospace;
-            font-size: 15.4px;
-            color: #6ff8c4;
-            height: 368px;
-            position: relative;
-            overflow: hidden;
-        }
+.section-header {
+    max-width:1280px;
+    margin:0 auto 14px;
+    padding:0 32px;
+    font-size:13px;
+    letter-spacing:3px;
+    color: var(--accent);
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
 
-        .terminal-body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(transparent 48%, rgba(111, 248, 196, 0.035) 50%);
-            background-size: 100% 7px;
-            pointer-events: none;
-            animation: scanline 7s linear infinite;
-        }
+.section-header::before {
+    content:'';
+    height:1px;
+    flex:1;
+    background: linear-gradient(to right,var(--accent),transparent);
+}
 
-        @keyframes scanline {
-            0% { transform: translateY(-120%); }
-            100% { transform: translateY(320%); }
-        }
+.tools-grid {
+    max-width:1280px;
+    margin:0 auto;
+    padding:0 32px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(520px,1fr));
+    gap:32px;
+}
 
-        section {
-            padding: 140px 0;
-            position: relative;
-        }
+.tool-card {
+    background: var(--surface);
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    padding:48px 44px;
+    transition:transform 0.45s ease, box-shadow 0.45s ease;
+    position:relative;
+}
 
-        .section-header {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 0 40px;
-            font-size: 13.5px;
-            font-weight: 600;
-            letter-spacing: 3.5px;
-            color: var(--accent);
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+.tool-card:hover {
+    transform:translateY(-12px);
+    box-shadow:0 0 70px -18px rgba(0,245,255,0.45);
+    border-color: var(--accent);
+}
 
-        .section-header::before {
-            content: '';
-            height: 1px;
-            flex: 1;
-            background: linear-gradient(to right, var(--accent), transparent);
-        }
+.tool-links {
+    margin-top:36px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+}
 
-        .tools-grid {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 0 40px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(540px, 1fr));
-            gap: 36px;
-        }
+.tool-links a {
+    color: var(--accent);
+    text-decoration:none;
+    font-size:14.5px;
+    border-bottom:1px solid transparent;
+    transition: all 0.3s ease;
+}
 
-        .tool-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 26px;
-            padding: 52px 48px;
-            transition: all 0.55s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative;
-            overflow: hidden;
-        }
+.tool-links a:hover {
+    border-bottom-color: var(--accent);
+    color:#fff;
+}
 
-        .tool-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(0, 240, 255, 0.065), transparent 60%);
-            opacity: 0;
-            transition: opacity 0.55s ease;
-            pointer-events: none;
-        }
+.contact-buttons {
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:18px;
+    margin-top:42px;
+}
 
-        .tool-card:hover {
-            transform: translateY(-18px);
-            border-color: var(--accent);
-            box-shadow: 
-                0 0 0 1px var(--accent),
-                0 35px 75px -18px rgba(0, 240, 255, 0.42);
-        }
+.contact-btn {
+    border:1.5px solid var(--border);
+    color: var(--accent);
+    padding:18px 42px;
+    border-radius:999px;
+    text-decoration:none;
+    transition: all 0.35s ease;
+}
 
-        .tool-card:hover::before {
-            opacity: 1;
-        }
+.contact-btn:hover {
+    border-color: var(--accent);
+    background:rgba(0,245,255,0.08);
+    transform:translateY(-4px);
+}
 
-        .tool-card h3 {
-            font-size: 30px;
-            font-weight: 700;
-            margin-bottom: 22px;
-        }
+footer {
+    border-top:1px solid var(--border);
+    padding:60px 0 80px;
+    text-align:center;
+    color:#64748b;
+    font-size:13px;
+}
 
-        .tool-card p {
-            color: var(--muted);
-            font-size: 16px;
-            line-height: 1.85;
-        }
+@media(max-width:992px){
+    .hero-content{
+        grid-template-columns:1fr;
+        text-align:center;
+    }
+    .tools-grid{
+        grid-template-columns:1fr;
+    }
+}
 
-        .tool-links {
-            margin-top: 42px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .tool-btn {
-            background: transparent;
-            border: 1.5px solid var(--border);
-            color: var(--accent);
-            padding: 14px 32px;
-            border-radius: 9999px;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        .tool-btn:hover {
-            background: rgba(0, 240, 255, 0.09);
-            border-color: var(--accent);
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
-            transform: translateY(-3px);
-        }
-
-        .about-content {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 0 40px;
-            font-size: 17.2px;
-            color: var(--muted);
-            line-height: 1.92;
-            max-width: 860px;
-        }
-
-        .contact-section {
-            max-width: 1320px;
-            margin: 0 auto;
-            padding: 0 40px;
-            text-align: center;
-        }
-
-        .contact-buttons {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 46px;
-        }
-
-        .contact-btn {
-            background: transparent;
-            border: 1.8px solid var(--border);
-            color: var(--accent);
-            padding: 19px 46px;
-            border-radius: 9999px;
-            font-size: 15.2px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.45s cubic-bezier(0.23, 1, 0.32, 1);
-            min-width: 192px;
-        }
-
-        .contact-btn:hover {
-            border-color: var(--accent);
-            background: rgba(0, 240, 255, 0.085);
-            box-shadow: 0 0 35px rgba(0, 240, 255, 0.38);
-            transform: translateY(-5px);
-        }
-
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 68px 0 92px;
-            text-align: center;
-            color: #64748b;
-            font-size: 13.2px;
-            letter-spacing: 1px;
-        }
-
-        @media (max-width: 1024px) {
-            .hero-content {
-                grid-template-columns: 1fr;
-                gap: 72px;
-                text-align: center;
-            }
-            .tools-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-            .hamburger {
-                display: flex;
-            }
-            .mobile-menu {
-                display: none;
-            }
-            .mobile-menu.active {
-                display: flex;
-            }
-            .terminal-body {
-                height: 290px;
-                padding: 28px 32px;
-                font-size: 14.2px;
-            }
-        }
-    </style>
+@media(max-width:768px){
+    .nav-links{display:none;}
+    .hamburger{display:flex;}
+}
+</style>
 </head>
 <body>
 
-    <div class="grid-bg"></div>
+<div class="grid-bg"></div>
 
-    <header>
-        <div class="nav-container">
-            <div class="logo">HASAN HABEEB</div>
-            
-            <div class="nav-links">
-                <a href="#tools">TOOLING</a>
-                <a href="#about">ABOUT</a>
-                <a href="#contact">CONTACT</a>
-            </div>
-
-            <div class="hamburger" id="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-
-        <div class="mobile-menu" id="mobileMenu">
+<header>
+    <div class="nav-container">
+        <div class="logo">HASAN HABEEB</div>
+        <div class="nav-links">
             <a href="#tools">TOOLING</a>
             <a href="#about">ABOUT</a>
             <a href="#contact">CONTACT</a>
         </div>
-    </header>
-
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-text">
-                <h1>Hasan Habeeb</h1>
-                <div class="subtitle">Offensive CyberSecurity Researcher</div>
-                <div class="tagline">
-                    Red team–oriented offensive security tooling and proxy extensions engineered for protocol dissection, runtime traffic manipulation, and precision attack automation. Focused on deterministic analysis and scalable attack surface expansion across modern web and API ecosystems.
-                </div>
-            </div>
-
-            <div class="terminal-frame">
-                <div class="terminal-header">
-                    <div class="terminal-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    <div style="margin-left: auto; font-size: 12.8px; color: #64748b; font-family: monospace;">hasnhab@offsec-terminal • LIVE</div>
-                </div>
-                <div class="terminal-body" id="terminal"></div>
-            </div>
+        <div class="hamburger" id="hamburger">
+            <span></span><span></span><span></span>
         </div>
-    </section>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#tools">TOOLING</a>
+        <a href="#about">ABOUT</a>
+        <a href="#contact">CONTACT</a>
+    </div>
+</header>
 
-    <section id="tools">
-        <div class="section-header">OFFENSIVE TOOLING</div>
-        
-        <div class="tools-grid">
-            <div class="tool-card">
-                <h3>HarQL</h3>
-                <p>
-                    Advanced GraphQL Harvester extension for Burp Suite enabling deterministic extraction of operations, inferred schema reconstruction, traffic replay integration, and low-noise intelligence harvesting in non-introspectable production environments.
-                </p>
-                <div class="tool-links">
-                    <a href="https://github.com/Hasnhab/HarQL" target="_blank" class="tool-btn">Repository</a>
-                    <a href="https://github.com/Hasnhab/HarQL/releases/tag/HarQL_v1.0" target="_blank" class="tool-btn">Release v1.0</a>
-                    <a href="https://github.com/Hasnhab/HarQL/blob/main/README.md#demo--screenshots" target="_blank" class="tool-btn">Screenshots</a>
-                </div>
-            </div>
+<section class="hero">
+<div class="hero-content">
+<div class="hero-text">
+<h1>Hasan Habeeb</h1>
+<div class="subtitle">Offensive CyberSecurity Researcher</div>
+<div class="tagline">
+Offensive tooling and protocol analysis platforms engineered for security research, attack surface exploration, and deterministic analysis of modern web ecosystems.
+</div>
+</div>
 
-            <div class="tool-card">
-                <h3>graphql_harvester</h3>
-                <p>
-                    Research-grade GraphQL intelligence harvester for mitmproxy, engineered for reproducible extraction and correlation of GraphQL operations, doc_ids, and runtime variables within production-scale traffic flows.
-                </p>
-                <div class="tool-links">
-                    <a href="https://github.com/Hasnhab/graphql_harvester" target="_blank" class="tool-btn">Repository</a>
-                </div>
-            </div>
-        </div>
-    </section>
+<div class="terminal-frame">
+<div class="terminal-header">
+<div class="terminal-dots"><span></span><span></span><span></span></div>
+<div style="margin-left:auto;font-size:12.5px;color:#64748b;">terminal • LIVE</div>
+</div>
+<div class="terminal-body" id="terminal"></div>
+</div>
+</div>
+</section>
 
-    <section id="about">
-        <div class="section-header">ABOUT</div>
-        <div class="about-content">
-            Offensive cybersecurity researcher with over four years of hands-on experience in web application, API, and infrastructure-facing security. Active contributor to the Meta Bug Bounty Program since 2021, with multiple validated vulnerability reports across GraphQL APIs, authentication flows, and enterprise gateway components.
-            <br><br>
-            Background in communications and electronics engineering, with a professional approach centered on deterministic methodology, reproducibility, and analyst-controlled tooling. Strong emphasis on ethical research, responsible disclosure, and precision-driven offensive engineering.
-        </div>
-    </section>
+<section id="tools">
+<div class="section-header">OFFENSIVE TOOLING</div>
+<div class="tools-grid">
 
-    <section id="contact">
-        <div class="contact-section">
-            <div class="section-header">CONTACT</div>
-            
-            <div class="contact-buttons">
-                <a href="https://www.linkedin.com/in/hasanhabeeb" target="_blank" class="contact-btn">LinkedIn</a>
-                <a href="https://www.facebook.com/HasanHabeb" target="_blank" class="contact-btn">Facebook</a>
-                <a href="https://www.instagram.com/hasan.a.habeeb" target="_blank" class="contact-btn">Instagram</a>
-                <a href="mailto:hasnhab.sec@gmail.com" class="contact-btn">Email</a>
-            </div>
-        </div>
-    </section>
+<div class="tool-card">
+<h3>HarQL</h3>
+<p>GraphQL extension for Burp Suite enabling schema reconstruction and traffic analysis.</p>
+<div class="tool-links">
+<a href="https://github.com/Hasnhab/HarQL" target="_blank">Repository</a>
+<a href="https://github.com/Hasnhab/HarQL/releases" target="_blank">Releases</a>
+</div>
+</div>
 
-    <footer>
-        © 2026 Hasan Habeeb — Offensive Security Engineering
-    </footer>
+<div class="tool-card">
+<h3>graphql_harvester</h3>
+<p>Research-grade GraphQL intelligence harvester for traffic correlation and operation extraction.</p>
+<div class="tool-links">
+<a href="https://github.com/Hasnhab/graphql_harvester" target="_blank">Repository</a>
+</div>
+</div>
 
-    <script>
-        const lines = [
-            "[BOOT] Initializing offensive research environment...",
-            "[OK] Loading protocol dissection modules",
-            "[OK] Attaching runtime traffic instrumentation",
-            "[OK] GraphQL intelligence harvesting engine ready",
-            "[OK] Attack surface expansion routines active",
-            "[READY] Analyst control granted"
-        ];
+</div>
+</section>
 
-        let lineIndex = 0;
-        let charIndex = 0;
-        let currentText = "";
+<section id="about">
+<div class="section-header">ABOUT</div>
+<div class="tools-grid">
+<div class="tool-card">
+<p>
+Offensive cybersecurity research with focus on web application and API security. Methodology centered on reproducibility and responsible disclosure.
+</p>
+</div>
+</div>
+</section>
 
-        const terminal = document.getElementById("terminal");
+<section id="contact">
+<div class="contact-section">
+<div class="section-header">CONTACT</div>
+<div class="contact-buttons">
+<a href="https://www.linkedin.com" target="_blank" class="contact-btn">LinkedIn</a>
+<a href="mailto:example@example.com" class="contact-btn">Email</a>
+</div>
+</div>
+</section>
 
-        function typeLine() {
-            if (lineIndex < lines.length) {
-                if (charIndex < lines[lineIndex].length) {
-                    currentText += lines[lineIndex].charAt(charIndex);
-                    terminal.innerHTML = currentText + '<span style="display:inline-block;width:8px;height:19px;background:#00f0ff;vertical-align:middle;animation:blink 0.75s step-end infinite;"></span>';
-                    charIndex++;
-                    setTimeout(typeLine, 24);
-                } else {
-                    currentText += "<br>";
-                    terminal.innerHTML = currentText + '<span style="display:inline-block;width:8px;height:19px;background:#00f0ff;vertical-align:middle;animation:blink 0.75s step-end infinite;"></span>';
-                    lineIndex++;
-                    charIndex = 0;
-                    setTimeout(typeLine, 460);
-                }
-            } else {
-                setTimeout(() => {
-                    terminal.innerHTML = "";
-                    lineIndex = 0;
-                    charIndex = 0;
-                    currentTe
+<footer>
+© 2026 Hasan Habeeb — Offensive Security Engineering
+</footer>
+
+<script>
+const lines = [
+"[BOOT] Initializing environment...",
+"[OK] Loading analysis modules",
+"[OK] Traffic instrumentation ready",
+"[READY] Analyst control granted"
+];
+
+let lineIndex=0, charIndex=0, currentText="";
+const terminal=document.getElementById("terminal");
+
+function typeLine(){
+    if(lineIndex < lines.length){
+        if(charIndex < lines[lineIndex].length){
+            currentText += lines[lineIndex].charAt(charIndex);
+            terminal.innerHTML = currentText + '<span style="width:8px;height:18px;background:#00f5ff;display:inline-block;"></span>';
+            charIndex++;
+            setTimeout(typeLine,26);
+        } else {
+            currentText += "<br>";
+            terminal.innerHTML = currentText;
+            lineIndex++;
+            charIndex=0;
+            setTimeout(typeLine,480);
+        }
+    } else {
+        setTimeout(()=>{ terminal.innerHTML=""; lineIndex=0; charIndex=0; currentText=""; typeLine(); },3800);
+    }
+}
+typeLine();
+
+const hamburger = document.getElementById("hamburger");
+const mobileMenu = document.getElementById("mobileMenu");
+
+hamburger.addEventListener("click", ()=>{
+    mobileMenu.classList.toggle("active");
+});
+
+document.querySelectorAll("#mobileMenu a").forEach(link=>{
+    link.addEventListener("click", ()=>{
+        mobileMenu.classList.remove("active");
+    });
+});
+</script>
+
+</body>
+</html>
