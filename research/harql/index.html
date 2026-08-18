@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>From Regex to Reconstruction: The Engineering Evolution of HarQL | Hasan Habeeb</title>
+
+<meta name="description"
+      content="A technical history of HarQL and the engineering evolution of reverse-engineering hidden GraphQL operations from obfuscated client-side JavaScript.">
+
+<meta name="author" content="Hasan Habeeb">
+<meta name="robots" content="index, follow">
+
+<link rel="canonical" href="https://hasnhab.github.io/research/harql/">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="From Regex to Reconstruction: The Engineering Evolution of HarQL">
+<meta property="og:description"
+      content="A technical history of reverse-engineering hidden GraphQL operations from obfuscated client-side JavaScript.">
+<meta property="og:url" content="https://hasnhab.github.io/research/harql/">
+<meta property="og:site_name" content="Hasan Habeeb">
+<meta property="article:author" content="Hasan Habeeb">
+<meta property="article:published_time" content="2026-08-14">
+
+<link rel="stylesheet" href="../../assets/css/site.css">
+<link rel="stylesheet" href="../../assets/css/article.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "From Regex to Reconstruction: The Engineering Evolution of HarQL",
+  "description": "A technical history of reverse-engineering hidden GraphQL operations from obfuscated client-side JavaScript.",
+  "author": {
+    "@type": "Person",
+    "name": "Hasan Habeeb"
+  },
+  "datePublished": "2026-08-14",
+  "dateModified": "2026-08-14",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hasnhab.github.io/research/harql/"
+  },
+  "url": "https://hasnhab.github.io/research/harql/",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Hasan Habeeb",
+    "url": "https://hasnhab.github.io/"
+  },
+  "keywords": [
+    "HarQL",
+    "GraphQL",
+    "GraphQL security",
+    "Relay",
+    "reverse engineering",
+    "JavaScript analysis",
+    "Burp Suite"
+  ]
+}
+</script>
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none';">
+</head>
+
+<body>
+<a class="skip-link" href="#article-content">
+    Skip to article
+</a>
+
+<div class="grid-bg"></div>
+
+<header>
+    <div class="nav-container">
+        <div class="logo">HASAN HABEEB</div>
+
+        <nav class="nav-links" aria-label="Primary navigation">
+            <a href="../../index.html">HOME</a>
+            <a href="../../index.html#tools">TOOLING</a>
+            <a href="../../index.html#about">ABOUT</a>
+            <a href="../../index.html#contact">CONTACT</a>
+        </nav>
+
+        <div class="hamburger"
+             id="hamburger"
+             aria-label="Open navigation"
+             role="button"
+             tabindex="0">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="../../index.html">HOME</a>
+        <a href="../../index.html#tools">TOOLING</a>
+        <a href="../../index.html#about">ABOUT</a>
+        <a href="../../index.html#contact">CONTACT</a>
+    </div>
+</header>
+
+<main class="article-page">
+
+<article>
+
+<header class="article-header">
+
+<div class="article-kicker">
+HARQL / TECHNICAL RESEARCH
+</div>
+
+<h1 class="article-title">
+From Regex to Reconstruction: The Engineering Evolution of HarQL
+</h1>
+
+<p class="article-subtitle">
+A Technical History of Reverse-Engineering Hidden GraphQL Operations from Obfuscated Client-Side JavaScript
+</p>
+
+<div class="article-meta">
+<span>Hasan Habeeb</span>
+<span>Version 1.0</span>
+<span>Published 2026-08-14</span>
+</div>
+
+</header>
+
+<section class="abstract" aria-labelledby="abstract-title">
+
+<h2 id="abstract-title">Abstract</h2>
+
+<p>
+When GraphQL introspection is disabled in a production environment, conventional schema-discovery techniques lose much of their value. The absence of introspection, however, does not mean that a particular client implementation is unaware of the API structure it needs to invoke. A web application still has to retain enough operation-specific information to construct the requests required by its implementation.
+</p>
+
+<p>
+HarQL was developed around that observation. Its purpose is to recover GraphQL operation metadata from JavaScript artifacts generated for Meta's web applications using Relay, and to combine that information with values observed in live traffic.
+ What began as a small regex-based experiment developed into a broader reverse-engineering workflow incorporating module correlation, Relay artifact analysis, runtime observation, value matching, request reconstruction, and Burp Suite integration.
+</p>
+
+<p>
+This article documents that development in technical rather than promotional terms. It examines the implementation choices that proved useful, the heuristics that did not survive, the architectural costs introduced by successive designs, and the limitations that remain. The resulting picture is less a story about a single extraction technique than an account of how practical reverse engineering evolves when the target client is large, generated, aggressively minified, and backed by a GraphQL service whose introspection interface is not available to the researcher.
+
+</p>
+
+</section>
+
+<nav class="article-toc" aria-labelledby="toc-title">
+    <h2 id="toc-title">Table of Contents</h2>
+
+    <ol>
+        <li><a href="#the-problem">The Problem</a></li>
+        <li><a href="#research-question">Research Question</a></li>
+        <li><a href="#stage-1-finding-doc-id">Stage 1 — Finding <code>doc_id</code></a></li>
+        <li><a href="#stage-2-correlating-operations">Stage 2 — Correlating Operations</a></li>
+        <li><a href="#stage-3-recovering-variables">Stage 3 — Recovering Variables</a></li>
+        <li><a href="#default-value-normalization">Default-Value Normalization</a></li>
+        <li><a href="#cross-file-correlation">Cross-File Correlation</a></li>
+        <li><a href="#runtime-observation">Runtime Observation</a></li>
+        <li><a href="#static-runtime-fusion">Static–Runtime Fusion</a></li>
+        <li><a href="#hybrid-python-java-architecture">The Hybrid Python–Java Architecture</a></li>
+        <li><a href="#java-rewrite">The Java Rewrite</a></li>
+        <li><a href="#cost-of-native-integration">The Cost of Native Integration</a></li>
+        <li><a href="#architecture-of-harql-v1">Architecture of HarQL v1</a></li>
+        <li><a href="#engineering-problems">Engineering Problems That Shaped the System</a></li>
+        <li><a href="#what-harql-reconstructs">What HarQL Actually Reconstructs</a></li>
+        <li><a href="#static-runtime-evidence">Static Analysis and Runtime Evidence as Complementary Sources</a></li>
+        <li><a href="#limitations">Limitations</a></li>
+        <li><a href="#why-ast">Why AST Becomes the Natural Next Step</a></li>
+        <li><a href="#conclusion">Conclusion</a></li>
+    </ol>
+</nav>
+
+<div class="article-content" id="article-content">
+
+<h2 id="the-problem">1. The Problem</h2>
+
+<p>
+GraphQL introspection provides one of the most direct ways to query the type system exposed by a GraphQL service.
+ In a deployment where introspection is disabled or otherwise unavailable to the researcher, that source of schema information is no longer directly accessible.
+ For security research, API analysis, and protocol reconstruction, the immediate consequence is reduced visibility into the operations exposed by the application.
+</p>
+
+<p>
+The server-side restriction does not eliminate the client's need for that knowledge.
+</p>
+
+<p>
+A browser application cannot construct the requests required by a particular GraphQL client implementation without retaining enough operation-specific information to do so. Depending on the client and transport conventions involved, that information may include an operation name or persisted-operation identifier, variable definitions or values, and the representation required by the application's request format.
+
+</p>
+
+<p>
+That information is therefore already present somewhere in the client.
+</p>
+
+<p>
+For the Meta web applications examined in this research, much of that information was embedded in large JavaScript bundles produced by the application's Relay-based compilation pipeline.
+ The relevant information is distributed across generated modules and artifacts rather than presented as a clean, queryable schema. Minification further removes the syntactic cues that would normally make the relationships obvious to a human reader.
+</p>
+
+<p>
+The engineering problem is consequently one of <strong>recovering structure from generated client code</strong>.
+</p>
+
+<p>
+HarQL was built to explore that problem in practical terms.
+</p>
+
+
+<h2 id="research-question">2. Research Question</h2>
+
+<p>
+The investigation began with a simple question:
+</p>
+
+<p>
+<strong>How does the Meta web client examined in this research retain enough information to construct a GraphQL operation when the tested service does not expose its schema through introspection?
+</strong>
+</p>
+
+<p>
+The initial hypothesis was that the mapping between readable operation names and the opaque <code>doc_id</code> values observed in the Meta application's requests would be represented somewhere in the JavaScript artifacts delivered to the browser.
+
+</p>
+
+<p>
+That hypothesis proved productive.
+</p>
+
+<p>
+Inspection of Meta's bundles revealed recurring numeric identifiers associated with Relay operation modules. Once those identifiers could be correlated with observed requests, a broader set of questions followed:
+</p>
+
+<ul>
+<li>Where are the operation names encoded?</li>
+<li>Where do variable definitions live?</li>
+<li>How are defaults represented in minified compiler output?</li>
+<li>Can information split across several generated artifacts be correlated?</li>
+<li>Can static variable definitions be enriched with values observed during normal application traffic?</li>
+<li>Can the resulting data structure be used to reconstruct a request rather than merely enumerate identifiers?</li>
+</ul>
+
+<p>
+HarQL's architecture grew in response to those questions.
+</p>
+
+<p>
+It is best understood as a specialized reverse-engineering system for Relay-generated GraphQL artifacts rather than as a general-purpose GraphQL scanner.
+</p>
+
+
+<h2 id="stage-1-finding-doc-id">3. Stage 1 — Finding <code>doc_id</code></h2>
+
+<p>
+The first useful results came from a simple local analysis idea: inspect JavaScript files already collected in a local directory and determine whether the opaque <code>doc_id</code> values seen in live GraphQL requests could be located reliably inside the corresponding client-side JavaScript.
+</p>
+
+<p>
+Long numeric strings appeared repeatedly around assignments of the form:
+</p>
+
+<pre><code>e.exports = "..."</code></pre>
+
+<p>
+Some of those values could be correlated with the <code>doc_id</code> parameter observed in GraphQL-related requests generated by the Meta web client.
+ That correlation provided the first concrete evidence that the client-side bundles contained the operation identifiers needed to understand the requests.
+</p>
+
+<p>
+The initial implementation, <code>stage-01.py</code>, therefore ran as a mitmproxy addon and inspected JavaScript responses as they passed through the proxy. Its core extraction logic used a regular expression:
+</p>
+
+<pre><code>doc_id_pattern = re.compile(r'e\.exports\s*=\s*["\'](\d{8,})["\']')</code></pre>
+
+<p>
+For each match, the script examined a fixed local region of the response and attempted to extract a nearby variable object:
+</p>
+
+<pre><code>def extract_variables_nearby(lines, index):
+    search_range = lines[max(0, index-20): index+20]
+    combined = "\n".join(search_range)
+    match = variables_pattern.search(combined)
+    if match:
+        raw_vars = match.group(1)
+        keys = re.findall(r'["\']?([\w_]+)["\']?\s*:', raw_vars)
+        return list(set(keys))
+    return []</code></pre>
+
+<p>
+At this point the system was not trying to understand Relay's generated module structure. It was testing whether a recognizable identifier pattern could be located in JavaScript at all, using a simple local scan of previously collected files.
+</p>
+
+<p>
+That approach was useful for establishing the signal.
+</p>
+
+<p>
+It also exposed the first serious weakness in the extraction strategy. The script associated variables with identifiers based on physical proximity—roughly twenty lines in either direction. That assumption has little meaning once JavaScript has been transformed by a compiler and aggressively minified. A logically related construct may be separated from the identifier by an arbitrary amount of generated code, while an unrelated object may happen to fall within the same textual window.
+</p>
+
+<p>
+The first stage therefore established two things at once: <code>doc_id</code> values were recoverable from client-side JavaScript, and naive spatial association was not a dependable way to reconstruct the surrounding operation.
+</p>
+
+<p>
+The next step was to use the module structure itself to connect the identifier with the operation it represented.
+</p>
+
+
+<h2 id="stage-2-correlating-operations">4. Stage 2 — Correlating Operations</h2>
+
+<p>
+Once <code>doc_id</code> extraction worked, the next practical problem was obvious: an identifier without an operation name had limited analytical value.
+</p>
+
+<p>
+With the initial extraction idea established, the investigation then moved from local file analysis into live interception with mitmproxy. The goal of the second stage was to determine how Relay operation modules were named and how those names could be correlated with their numeric exports.
+</p>
+
+<p>
+A recurring convention in the examined Meta bundles involved <code>_facebookRelayOperation</code> modules whose names could be associated with numeric exports.
+ The second-stage extractor used the following expression:
+</p>
+
+<pre><code>pattern = re.compile(
+    r'__d\("([^"]+?)_facebookRelayOperation".*?e\.exports\s*=\s*"(\d+)"',
+    re.DOTALL
+)</code></pre>
+
+<p>
+The pattern connected the module definition to its exported identifier and allowed the system to associate an operation name prefix with the corresponding <code>doc_id</code>.
+</p>
+
+<p>
+This changed the nature of the tool.
+</p>
+
+<p>
+JavaScript responses were now being processed as live artifacts arriving through a proxy rather than as a directory of static files.
+</p>
+
+<p>
+The stage also introduced persistent storage:
+</p>
+
+<pre><code>repo_json_path = os.path.join(desktop, "relay_repository.json")
+session_json_path = os.path.join(desktop, "relay_session.json")</code></pre>
+
+<p>
+The repository retained information across executions. The session reflected the current capture period. Deduplication used a module-plus-identifier key:
+</p>
+
+<pre><code>key = f"{module}:{docid}"
+repo_seen = set(f"{m}:{d}" for m, d in repo_entries)</code></pre>
+
+<p>
+The extracted information was rendered into self-contained HTML output, including client-side export functions for the collected identifiers and module names.
+</p>
+
+<p>
+At this point HarQL had acquired something closer to an operation catalog.
+</p>
+
+<p>
+The variable-extraction heuristic from the initial script was deliberately not carried forward. Once the project moved into live module-level analysis, the fixed line-based search looked increasingly like a source of false associations rather than a reliable way to establish relationships between generated artifacts.
+</p>
+
+<p>
+That decision was important.
+</p>
+
+<p>
+The project was beginning to distinguish between <strong>a textual coincidence</strong> and <strong>an actual relationship in generated code</strong>.
+</p>
+
+<p>
+The second-stage system could identify operations and their identifiers, but it still knew little about the arguments required to invoke those operations. That gap became the focus of the next stage.
+</p>
+
+
+<h2 id="stage-3-recovering-variables">5. Stage 3 — Recovering Variables</h2>
+
+<p>
+The Relay-generated JavaScript artifacts examined in the Meta client contained several representations of related information for the same logical operation.
+ Variable information can appear in <code>.graphql</code> artifacts, entrypoint modules, and related generated structures.
+</p>
+
+<p>
+Stage 3, implemented in <code>graphql_harvester.py</code>, introduced extraction logic specifically designed around those conventions.
+</p>
+
+<p>
+The harvester first isolated individual <code>__d()</code> module blocks:
+</p>
+
+<pre><code>MODULE_BLOCK_RE = re.compile(
+    r'__d\(\s*"([^"]+)"\s*,.*?\(function\([^\)]*\)\s*\{\s*(.*?)\s*\}\s*\)\s*,.*?\)\s*;',
+    re.S
+)</code></pre>
+
+<p>
+This was a meaningful improvement over the earlier line-window heuristic. Instead of asking what happened to be close to <code>doc_id</code>, the extractor first established a module boundary and then reasoned about the contents of that module.
+</p>
+
+<h3>`.graphql` artifacts</h3>
+
+<p>
+The first extraction path targeted <code>LocalArgument</code> structures observed in the Relay-generated artifacts used by the examined Meta client:
+
+</p>
+
+<pre><code>LOCAL_ARG_BLOCK_RE = re.compile(
+    r'\{[^{}]*kind\s*:\s*"LocalArgument"[^{}]*\}',
+    re.S
+)
+
+NAME_IN_BLOCK_RE = re.compile(r'name\s*:\s*"([^"]+)"')
+
+DEFAULT_IN_BLOCK_RE = re.compile(
+    r'defaultValue\s*:\s*([^,\}]+)'
+)</code></pre>
+
+<p>
+This allowed the harvester to recover variable names and associated default expressions from generated argument definitions.
+</p>
+
+<h3>`.entrypoint` artifacts</h3>
+
+<p>
+A second path handled entrypoint modules in the examined client artifacts that reference parameter modules and expose variable objects:
+
+</p>
+
+<pre><code>ENTRYPOINT_PAIR_RE = re.compile(
+    r'parameters\s*:\s*\w\(\s*"([^"]+)"\s*\)\s*,[\s\S]*?variables\s*:\s*\{(.*?)\}',
+    re.S
+)
+
+VAR_KEY_RE = re.compile(
+    r'([A-Za-z_][A-Za-z0-9_]*)\s*:'
+)</code></pre>
+
+<p>
+This provided an alternative route to the same variable information when the first artifact type was unavailable or incomplete.
+</p>
+
+<h3>Full-text <code>$Parameters</code> extraction</h3>
+
+<p>
+A broader search over <code>$Parameters</code> structures served as a fallback when the more targeted artifact-level approaches failed.
+</p>
+
+<p>
+The overall strategy was deliberately redundant.
+</p>
+
+<p>
+Generated client code often contains several overlapping representations of the same semantic information. A reverse-engineering tool can exploit that redundancy instead of assuming that one artifact will always contain the complete answer.
+</p>
+
+
+<h2 id="default-value-normalization">6. Default-Value Normalization</h2>
+
+<p>
+Variable names alone do not say much about the values an operation expects.
+</p>
+
+<p>
+The next refinement was to normalize default expressions observed in Meta's generated client code.
+
+</p>
+
+<p>
+The helper <code>_normalize_default_token()</code> handled common minified representations:
+</p>
+
+<pre><code>def _normalize_default_token(token: str):
+    if token is None:
+        return None
+    s = token.strip()
+    if s == "!0": return False
+    if s == "!1": return True
+    if s.lower() == "null": return None
+    if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")):
+        return s[1:-1]
+    if re.search(r'WebPixelRatio\.get\(\)', s):
+        return 1
+    if re.fullmatch(r'-?\d+', s):
+        try: return int(s)
+        except: return s
+    if s == "true": return True
+    if s == "false": return False
+    return None</code></pre>
+
+<p>
+The routine was extended to deal with additional scalar forms, helper calls, and conditional expressions encountered in the generated bundles.
+</p>
+
+<p>
+This matters because compiler output frequently represents a simple semantic value through syntax that is quite different from the source-level representation a developer would normally expect. Without normalization, the extracted repository would contain implementation details of the compiler rather than useful values.
+</p>
+
+<p>
+Even so, static defaults had a clear ceiling.
+</p>
+
+<p>
+A client artifact that records a variable with a default of <code>null</code> provides evidence that the corresponding operation expects or models that variable.
+ It does not necessarily provide a value that can be used to reproduce the application's real behavior.
+</p>
+
+<p>
+That distinction became central to the design.
+</p>
+
+
+<h2 id="cross-file-correlation">7. Cross-File Correlation</h2>
+
+<p>
+One of the harder problems was that Relay does not necessarily place every relevant piece of an operation in the same JavaScript file.
+</p>
+
+<p>
+The operation identifier, operation metadata, and variable definitions may arrive in different bundles or modules.
+</p>
+
+<p>
+Stage 3 introduced caches to correlate them:
+</p>
+
+<pre><code>CACHE_DOC_BY_BASE = {}
+CACHE_VARS_BY_BASE = {}
+CACHE_MODULE_BY_BASE = {}</code></pre>
+
+<p>
+The operation's base name served as the join key.
+</p>
+
+<p>
+A variable set recovered from something resembling:
+</p>
+
+<pre><code>BaseName.graphql</code></pre>
+
+<p>
+could therefore be associated later with information from:
+</p>
+
+<pre><code>BaseName_facebookRelayOperation</code></pre>
+
+<p>
+This was a conceptual step forward for the project.
+</p>
+
+<p>
+The extractor was no longer simply locating syntax. It was reconstructing relationships between generated artifacts that had been separated by the build process.
+</p>
+
+<p>
+At the end of this stage, the repository could represent an operation with its name, <code>doc_id</code>, variable definitions, and inferred defaults.
+</p>
+
+<p>
+But the most useful variable value might still be missing.
+</p>
+
+<p>
+Static analysis could tell HarQL that a variable existed. It could often tell the system its default. It could not guarantee that the default reflected the value used by a real application session.
+</p>
+
+<p>
+For that, the wire itself became the source of evidence.
+</p>
+
+
+<h2 id="runtime-observation">8. Runtime Observation</h2>
+
+<p>
+Stage 3 added request interception alongside JavaScript response processing.
+</p>
+
+<p>
+The mitmproxy <code>request()</code> hook filtered traffic associated with GraphQL endpoints:
+</p>
+
+<pre><code>def request(flow: http.HTTPFlow):
+  
+    try:
+        url = (flow.request.pretty_url or "")
+        url_lc = url.lower()
+        if "/api/graphql" not in url_lc:
+            return</code></pre>
+
+<p>
+The parser was designed to accommodate several request encodings observed in the examined application's GraphQL traffic.
+ It attempted JSON first and then handled form-encoded and parameter-based representations:
+</p>
+
+<pre><code>def _parse_graphql_variables_from_body(req_text: str):
+    """
+    Robust extractor:
+    - JSON dict: {"variables": {...}} or variables as JSON string.
+    - JSON array: [{"variables": {...}}, ...]
+    - form-urlencoded: variables=... (JSON string)
+    """
+    if not req_text:
+        return []
+
+    # Try JSON first
+    try:
+        obj = json.loads(req_text)
+        if isinstance(obj, dict):
+            vars_field = obj.get("variables")
+            if isinstance(vars_field, dict):
+                return [vars_field]
+            if isinstance(vars_field, str):
+                try:
+                    parsed = json.loads(vars_field)
+                    if isinstance(parsed, dict):
+                        return [parsed]
+                except Exception:
+                    pass
+            return []
+        if isinstance(obj, list):
+            out = []
+            for item in obj:
+                if isinstance(item, dict):
+                    v = item.get("variables")
+                    if isinstance(v, dict):
+                        out.append(v)
+                    elif isinstance(v, str):
+                        try:
+                            pv = json.loads(v)
+                            if isinstance(pv, dict):
+                                out.append(pv)
+                        except Exception:
+                            pass
+            return out
+    except Exception:
+        pass
+
+    # Fallback: form-urlencoded
+    try:
+        qs = parse_qs(req_text, keep_blank_values=True)
+        vars_list = qs.get("variables") or qs.get("Variables") or []
+        out = []
+        for v in vars_list:
+            try:
+                parsed = json.loads(v)
+                if isinstance(parsed, dict):
+                    out.append(parsed)
+            except Exception:
+                continue
+        if out:
+            return out
+    except Exception:
+        pass
+
+    return []</code></pre>
+
+<p>
+Observed values were stored in:
+</p>
+
+<pre><code>OBSERVED_PARAMS = {}</code></pre>
+
+<p>
+and accumulated with frequency information.
+</p>
+
+<p>
+This created a second body of evidence.
+</p>
+
+<p>
+The static analysis side described the <strong>operation metadata exposed by the client artifacts</strong>.
+
+</p>
+
+<p>
+The runtime side described <strong>actual operation usage and variable values observed in the application</strong>.
+
+</p>
+
+<p>
+That distinction is significant.
+</p>
+
+<p>
+A static artifact may declare a variable that is rarely used, populated dynamically, or normally supplied with a value derived from application state. Conversely, a live request contains a concrete value, but without context it may be difficult to determine which harvested operation or variable declaration it belongs to.
+</p>
+
+<p>
+HarQL therefore needed a correlation mechanism that could sit between the two.
+</p>
+
+
+<h2 id="static-runtime-fusion">9. Static–Runtime Fusion</h2>
+
+<p>
+The most important design idea in HarQL is the combination of those two evidence sources.
+</p>
+
+<p>
+Static analysis supplies operation identities, variables, and defaults.
+</p>
+
+<p>
+Traffic observation supplies concrete values.
+</p>
+
+<p>
+Normalization and matching establish the relationship between them.
+</p>
+
+<p>
+Conceptually, the system looks like this:
+</p>
+
+<pre><code>Static JavaScript Analysis
+        |
+        v
+Operation Metadata + Variables
+        |
+        |                         Live Traffic
+        |                              |
+        |                              v
+        |                       Observed Values
+        |                              |
+        +---------- Matching ----------+
+                        |
+                        v
+                 Injection Rules
+                        |
+                        v
+                Reconstructed Request</code></pre>
+
+<p>
+The generated dashboard implemented this through a rule layer backed by browser storage:
+</p>
+
+<pre><code>const LS_KEY = 'pf_injection_rules';
+let injectionRules = loadRules();</code></pre>
+
+<p>
+The distinction between source data and temporary substitutions was preserved through an overlay:
+</p>
+
+<pre><code>let tempOverlayRules = {};</code></pre>
+
+<p>
+That design allowed the operator to experiment with substitutions without modifying the underlying harvested record.
+</p>
+
+<p>
+The interface also included automatic candidate population:
+</p>
+
+<pre><code>function autoAddObservedCandidates(){
+    const candidates = collectObservedCandidates();
+    const missing = candidates.filter(c=&gt;!(c.nk in injectionRules));
+    if(missing.length === 0) return;
+    missing.forEach(c=&gt;{
+        addAutoRule(c.nk, c.top);
+    });
+    saveAutoAdded();
+    saveRules();
+}</code></pre>
+
+<p>
+The repository itself used merge semantics so that later discoveries could enrich earlier ones:
+</p>
+
+<pre><code>def _merge_vars(existing: dict, newvars: dict):
+    if not isinstance(existing, dict) or not existing:
+        return dict(newvars) if isinstance(newvars, dict) else {}
+    if not isinstance(newvars, dict) or not newvars:
+        return existing
+    merged = dict(existing)
+    for k, v in newvars.items():
+        if k not in merged or merged[k] is None:
+            merged[k] = v
+    return merged</code></pre>
+
+<p>
+This was particularly useful for variables initially discovered with incomplete defaults and later observed in live requests.
+</p>
+
+<p>
+The resulting system had moved beyond inventory.
+</p>
+
+<p>
+It had begun assembling enough information to construct a usable representation of an operation.
+</p>
+
+
+<h2 id="hybrid-python-java-architecture">10. The Hybrid Python–Java Architecture</h2>
+
+<p>
+The next challenge was not extraction itself but integration.
+</p>
+
+<p>
+HarQL needed to operate inside Burp Suite while retaining the Python-based harvesting engine that had already been developed.
+</p>
+
+<p>
+The intermediate solution was a local hybrid architecture.
+</p>
+
+<p>
+A Java Burp extension provided the user interface and integration point. A Python process remained responsible for harvesting and data processing. The two communicated through a local HTTP service.
+</p>
+
+<p>
+The arrangement can be summarized as:
+</p>
+
+<pre><code>Burp Suite
+    |
+    v
+Java Extension
+    |
+    | HTTP
+    v
+127.0.0.1:13496
+    |
+    v
+Python HTTP Service
+    |
+    v
+Harvesting Engine
+    |
+    v
+Repository / Observations / Reconstruction</code></pre>
+
+<p>
+The Burp interface exposed a dedicated GraphQL Harvester tab, while the local service provided repository and observation data as well as request-related operations.
+</p>
+
+<p>
+The design had a practical advantage: Burp integration could be introduced without immediately rewriting the extraction engine.
+</p>
+
+<p>
+It also introduced substantial operational overhead.
+</p>
+
+<p>
+There were now two processes to manage, two runtimes, serialization boundaries, IPC behavior, and independent failure modes. Every interface between the components became part of the system that had to be kept stable.
+</p>
+
+<p>
+The hybrid architecture solved the immediate problem, but it also made the case for a native implementation increasingly compelling.
+</p>
+
+
+<h2 id="java-rewrite">11. The Java Rewrite</h2>
+
+<p>
+The eventual response was a full Java rewrite intended to run directly inside Burp Suite.
+</p>
+
+<p>
+The public HarQL implementation was designed around Burp's Montoya API and organized the extension as a single native application rather than a Java front-end connected to an external Python service.
+</p>
+
+<p>
+The reported component model included:
+</p>
+
+<ul>
+<li><code>Extension.java</code> as the entry point.</li>
+<li><code>HttpListener.java</code> for traffic interception.</li>
+<li><code>MainTab.java</code> as the primary UI container.</li>
+<li><code>InMemoryEngine.java</code> as the central state and processing layer.</li>
+<li><code>GraphQLHarvesterService.java</code> for JavaScript extraction.</li>
+<li><code>GraphQLSchemaBuilder.java</code> for schema-oriented inference.</li>
+<li>Swing panels for repository, observation, and schema views.</li>
+</ul>
+
+<p>
+The rewrite brought several architectural advantages.
+</p>
+
+<p>
+Burp integration no longer depended on local IPC.
+</p>
+
+<p>
+The UI was native to the host platform, using Swing components rather than generated HTML.
+</p>
+
+<p>
+Rule state could be held directly by the extension instead of browser <code>localStorage</code>.
+</p>
+
+<p>
+A schema builder was introduced to generate SDL-like structures from harvested variables and inferred scalar categories.
+</p>
+
+<p>
+Interactive graph visualization was added to the interface.
+</p>
+
+<p>
+The implementation also introduced safeguards around the size of JavaScript modules processed by the extractor, reducing the risk of excessive resource consumption on unexpectedly large inputs.
+</p>
+
+<p>
+Request reconstruction was tied directly to Burp workflows, including integration with Repeater.
+</p>
+
+<p>
+The rewrite therefore made the system more coherent from an operational perspective. It also forced several earlier experimental features to be reconsidered.
+</p>
+
+
+<h2 id="cost-of-native-integration">12. The Cost of Native Integration</h2>
+
+<p>
+The Python dashboard had developed in a highly exploratory environment.
+</p>
+
+<p>
+Browser-side JavaScript made it inexpensive to add automatic rule population, dynamic previews, pattern-based substitutions, presets, and visual indicators. These features were useful during experimentation because the interface could change rapidly alongside the extraction logic.
+</p>
+
+<p>
+The native Java implementation had different constraints.
+</p>
+
+<p>
+State management became explicit. UI behavior became part of a long-lived extension. Concurrency and lifecycle issues mattered more. Features that had been straightforward in a generated HTML document could require considerably more infrastructure when expressed as persistent Java components.
+</p>
+
+<p>
+Some of the earlier automation was therefore simplified or made more explicit in the native implementation.
+</p>
+
+<p>
+That trade-off is important because it shows that the rewrite was not simply a feature-for-feature migration.
+</p>
+
+<p>
+The engineering priorities had changed.
+</p>
+
+<p>
+The earlier design favored experimentation and flexibility.
+</p>
+
+<p>
+The native extension favored integration, consistency, and a smaller operational footprint.
+</p>
+
+<p>
+In a reverse-engineering project, that distinction matters. The architecture that is ideal for discovering a technique is not necessarily the architecture that is ideal for packaging the technique into a dependable security tool.
+</p>
+
+
+<h2 id="architecture-of-harql-v1">13. Architecture of HarQL v1</h2>
+
+<p>
+At a high level, the Java implementation can be viewed as a unified processing pipeline:
+</p>
+
+<pre><code>Burp Montoya API
+        |
+        v
+   Extension.java
+        |
+        +--------------------+
+        |                    |
+        v                    v
+ HttpListener.java       MainTab.java
+        |
+        v
+ InMemoryEngine.java
+        |
+        +-----------------------------+
+        |                             |
+        v                             v
+GraphQLHarvesterService     GraphQLSchemaBuilder
+        |                             |
+        v                             v
+JavaScript Extraction          Schema Inference
+        |
+        v
+Repository / Observations / Rules
+        |
+        v
+Burp UI / Request Reconstruction</code></pre>
+
+<p>
+The engine maintains harvested repository entries, session state, observed parameters, and injection rules.
+</p>
+
+<p>
+JavaScript responses feed the static-analysis path.
+</p>
+
+<p>
+GraphQL requests feed the runtime-observation path.
+</p>
+
+<p>
+The resulting information converges inside the engine, where variable definitions can be associated with observed values and prepared for request reconstruction.
+</p>
+
+<p>
+The architecture is materially simpler than the earlier hybrid arrangement because the core data path remains within the same process.
+</p>
+
+
+<h2 id="engineering-problems">14. Engineering Problems That Shaped the System</h2>
+
+<h3>14.1 The Proximity Heuristic</h3>
+
+<p>
+The first version's twenty-line window was useful only as a quick experiment.
+</p>
+
+<p>
+It assumed that textual closeness implied semantic relatedness. Compiler-generated JavaScript does not consistently behave that way.
+</p>
+
+<p>
+The failed heuristic established an early design rule for the project: relationships need to be inferred from module and artifact structure whenever possible, rather than from arbitrary distances in the source text.
+</p>
+
+
+<h3>14.2 Regex Fragility</h3>
+
+<p>
+Regex was the enabling technology behind the early system because it made rapid iteration possible.
+</p>
+
+<p>
+The same choice became increasingly uncomfortable as the extractor grew.
+</p>
+
+<p>
+Patterns such as:
+</p>
+
+<pre><code>__d(...)
+e.exports
+_facebookRelayOperation
+LocalArgument
+$Parameters</code></pre>
+
+<p>
+are implementation conventions, not language-level semantics.
+</p>
+
+<p>
+They work while the generated output resembles the patterns being searched.
+</p>
+
+<p>
+A change in compiler templates, module wrappers, minification behavior, or internal naming conventions can therefore invalidate an extraction rule even if the underlying GraphQL semantics remain unchanged.
+</p>
+
+<p>
+This is the fundamental weakness of regex-driven reverse engineering of generated code: it recognizes a representation, not the program structure that produced that representation.
+</p>
+
+
+<h3>14.3 IPC and Process Boundaries</h3>
+
+<p>
+The hybrid design introduced a number of concerns that had little to do with GraphQL itself.
+</p>
+
+<p>
+Data had to cross a process boundary.
+</p>
+
+<p>
+Requests and responses had to be serialized.
+</p>
+
+<p>
+Both components had to remain alive and synchronized.
+</p>
+
+<p>
+Failures had to be diagnosed across two runtimes.
+</p>
+
+<p>
+The design worked, but its operational complexity was difficult to justify once the extraction engine itself had become mature enough to justify a native Burp implementation.
+</p>
+
+
+<h3>14.4 Automation Regression</h3>
+
+<p>
+The native rewrite also demonstrated that engineering progress can involve losing functionality.
+</p>
+
+<p>
+Some browser-side automation did not carry over intact.
+</p>
+
+<p>
+The reason was not that those features ceased to be useful. The implementation environment had changed, and the cost of maintaining them had increased.
+</p>
+
+<p>
+This is a recurring pattern in security tooling: an exploratory prototype can tolerate convenience mechanisms that become liabilities once the same mechanism is embedded in a persistent extension.
+</p>
+
+
+<h3>14.5 Write-Heavy Persistence</h3>
+
+<p>
+The Python implementation regenerated repository JSON and HTML output as discoveries arrived.
+</p>
+
+<p>
+That is simple and transparent, but it creates unnecessary serialization work as the dataset grows.
+</p>
+
+<p>
+A larger deployment would benefit from a storage layer that separates event ingestion from materialized views, or at least updates only the affected records rather than rewriting complete representations.
+</p>
+
+<p>
+The original design was adequate for rapid experimentation but not ideal as a foundation for very high-volume harvesting.
+</p>
+
+
+<h3>14.6 Static Defaults Are Not Runtime State</h3>
+
+<p>
+A variable definition and a usable request value are different things.
+</p>
+
+<p>
+A compiler artifact may state that a variable exists and provide <code>null</code> as its default. The live application may almost never send <code>null</code>.
+</p>
+
+<p>
+That discrepancy is one of the reasons runtime observation became a first-class component rather than an auxiliary feature.
+</p>
+
+<p>
+The broader lesson applies to reverse engineering beyond GraphQL: static artifacts frequently reveal the <strong>contract</strong>, while runtime traces reveal the <strong>operational behavior</strong>.
+</p>
+
+<p>
+A useful reconstruction system benefits from both.
+</p>
+
+
+<h2 id="what-harql-reconstructs">15. What HarQL Actually Reconstructs</h2>
+
+<p>
+It is important to be precise about what the system recovers.
+</p>
+
+<p>
+For the Meta client artifacts examined, HarQL can reconstruct useful operation metadata: operation names, observed <code>doc_id</code> values, variable definitions represented in the client artifacts, inferred defaults, and, where observed, concrete runtime values.
+
+</p>
+
+<p>
+That is enough to build a substantial operational picture of the client's GraphQL surface.
+</p>
+
+<p>
+It is not equivalent to recovering the server's complete GraphQL schema.
+</p>
+
+<p>
+The distinction matters.
+</p>
+
+<p>
+Client-side variable definitions do not reveal the full server-side GraphQL type system or object model.
+
+</p>
+
+<p>
+They do not establish every field exposed by a type.
+</p>
+
+<p>
+They do not recover resolver behavior.
+</p>
+
+<p>
+They do not enumerate every interface or union.
+</p>
+
+<p>
+They do not provide an authoritative representation of the server-side GraphQL schema equivalent to querying the service's own schema through its introspection system.
+
+</p>
+
+<p>
+The schema-oriented output generated by the Java implementation should therefore be regarded as <strong>inference derived from client artifacts</strong>, not as a ground-truth reconstruction of the backend schema.
+</p>
+
+<p>
+That distinction is essential when evaluating the scope of the technique.
+</p>
+
+
+<h2 id="static-runtime-evidence">16. Static Analysis and Runtime Evidence as Complementary Sources</h2>
+
+<p>
+The strongest aspect of the HarQL model is not any individual regex or parser.
+</p>
+
+<p>
+It is the relationship between different evidence sources.
+</p>
+
+<p>
+Static client analysis can expose operations that may never appear in a particular browsing session.
+</p>
+
+<p>
+Runtime observation provides concrete values and real invocation patterns but only for behavior that actually occurred.
+</p>
+
+<p>
+Static client artifacts can expose a broader set of operations than those exercised during a particular session, but they may not contain every piece of information required for reconstruction.
+
+</p>
+
+<p>
+Runtime traffic provides concrete evidence about operations and values actually observed, but it is inherently limited to the application's observed execution paths.
+
+</p>
+
+<p>
+Using both allows the system to compensate for the weaknesses of each.
+</p>
+
+<p>
+A useful way to think about this relationship is:
+</p>
+
+<pre><code>Static Evidence
+  ├─ Operation Identity
+  ├─ Variable Presence
+  └─ Default Information
+
+             +
+
+Runtime Evidence
+  ├─ Concrete Values
+  ├─ Value Frequency
+  └─ Observed Usage
+
+             ↓
+
+       Correlated Model
+             ↓
+     Reconstructable Request</code></pre>
+
+<p>
+That model is more general than the particular extraction techniques used by HarQL.
+</p>
+
+<p>
+It describes a broader reverse-engineering strategy in which code artifacts and runtime behavior are treated as complementary evidence rather than competing sources.
+</p>
+
+
+<h2 id="limitations">17. Limitations</h2>
+
+<p>
+HarQL's approach has several important limitations.
+</p>
+
+<h3>Target specificity</h3>
+
+<p>
+The extraction logic is strongly tied to the module conventions and Relay-generated client artifacts observed in the examined Meta applications.
+ A different GraphQL client may expose its operation metadata through entirely different structures.
+</p>
+
+<h3>Regex dependence</h3>
+
+<p>
+Much of the audited extraction pipeline remains based on textual patterns. Changes in generated JavaScript can therefore break individual extractors.
+</p>
+
+<h3>Runtime dependence</h3>
+
+<p>
+Static extraction can identify operations and client-side variable metadata without necessarily providing values suitable for reproducing the application's observed requests. Representative traffic remains important for reconstruction.
+
+</p>
+
+<h3>Storage model</h3>
+
+<p>
+Repeated JSON and HTML rewrites are convenient for a prototype but become less attractive as the repository grows.
+</p>
+
+<h3>Schema scope</h3>
+
+<p>
+The recovered client-side information should not be confused with the complete server-side GraphQL schema or type system.
+ The system focuses on the client-visible operation surface and the data required to exercise it.
+</p>
+
+<h3>Identity</h3>
+
+<p>
+<code>doc_id</code> is a useful identifier but not necessarily a complete identity model for an operation. An operation fingerprint derived from structural properties can provide stronger semantics and may remain meaningful even when identifiers change.
+</p>
+
+<h3>Validation</h3>
+
+<p>
+A robust production system would benefit from quantitative measurements covering extraction accuracy, false positives, false negatives, throughput, memory consumption, and reconstruction success rates. Those measurements were not a formal part of the early development process.
+</p>
+
+<p>
+These limitations are not peripheral details. They define the boundaries within which the current approach should be interpreted.
+</p>
+
+
+<h2 id="why-ast">18. Why AST Becomes the Natural Next Step</h2>
+
+<p>
+Regex remains attractive because it is lightweight and fast.
+</p>
+
+<p>
+It is also fundamentally tied to textual representation.
+</p>
+
+<p>
+An AST-based extractor operates at a different level.
+</p>
+
+<p>
+Instead of matching the textual form of module wrappers and generated artifacts, it can reason about JavaScript syntax such as declarations, call expressions, assignments, object literals, function scopes, and property relationships.
+
+</p>
+
+<p>
+That distinction becomes increasingly important as JavaScript generated by modern toolchains changes shape while preserving the same underlying semantics.
+</p>
+
+<p>
+The planned next generation of HarQL therefore moves toward semantic parsing with the Meriyah JavaScript parser.
+</p>
+
+<p>
+The expected benefit is not simply greater tolerance of changes in minification and generated-code layout.
+
+</p>
+
+<p>
+An AST-oriented architecture can support a richer analysis model:
+</p>
+
+<ul>
+<li>identify module boundaries from syntax rather than textual layout;</li>
+<li>trace assignments and references;</li>
+<li>associate exports with the structures that produce them;</li>
+<li>reason about generated object literals;</li>
+<li>derive stronger operation fingerprints;</li>
+<li>correlate artifacts through structural identity rather than only naming conventions;</li>
+<li>provide a foundation for deeper inference layers.</li>
+</ul>
+
+<p>
+The conceptual progression is better expressed as a change in abstraction:
+</p>
+
+<pre><code>Textual Pattern Recognition
+            ↓
+Module-Aware Extraction
+            ↓
+Static + Runtime Correlation
+            ↓
+Semantic JavaScript Analysis
+            ↓
+Structural GraphQL Modeling</code></pre>
+
+<p>
+The value of the AST direction lies in its ability to make the extractor less dependent on how the compiler happens to spell a structure in a particular release.
+</p>
+
+
+<h2 id="conclusion">19. Conclusion</h2>
+
+<p>
+HarQL began with an observation that is easy to state but difficult to operationalize: if a browser-based client can issue a particular GraphQL operation, the client implementation must retain enough information to construct the corresponding request.
+
+</p>
+
+<p>
+The first prototype demonstrated that operation identifiers could be located with simple textual heuristics. Subsequent work established reliable relationships between identifiers and Relay operation modules, recovered variable definitions from compiler-generated artifacts, and introduced cross-file correlation where the build pipeline had separated related pieces of information.
+</p>
+
+<p>
+Runtime observation added something static analysis could not reliably provide: concrete values used by the application in practice.
+</p>
+
+<p>
+Once those sources were combined, HarQL could represent more than a list of hidden identifiers. It could maintain a correlated model of operations, variables, defaults, and observed values, creating the basis for request reconstruction.
+</p>
+
+<p>
+The hybrid Python–Java design then addressed Burp integration without discarding the existing harvesting engine. Its limitations eventually led to a native Java implementation with tighter platform integration and a more centralized architecture.
+</p>
+
+<p>
+The most significant lesson from the project is therefore architectural rather than syntactic.
+</p>
+
+<p>
+The useful information is distributed.
+</p>
+
+<p>
+Part of it can be present in compiled client artifacts.
+
+</p>
+
+<p>
+Another part appears in runtime traffic.
+</p>
+
+<p>
+Neither source is complete in isolation, but together they provide considerably more visibility into the client-visible GraphQL operation surface of the examined application.
+
+</p>
+
+<p>
+HarQL's current limitations are equally instructive. Regex-based extraction remains dependent on implementation conventions, storage is not optimized for unrestricted scale, and variable-level reconstruction must not be mistaken for complete schema recovery.
+</p>
+
+<p>
+Those constraints point toward the next stage of the work.
+</p>
+
+<p>
+A parser that understands the JavaScript structure itself can provide a more durable foundation than a growing collection of textual patterns. From there, stronger operation identity, structural fingerprints, artifact correlation, and deeper GraphQL inference become engineering problems rather than speculative ideas.
+</p>
+
+<p>
+The significance of HarQL lies in that progression.
+</p>
+
+<p>
+It demonstrates that the absence of server-side GraphQL introspection does not necessarily eliminate the information retained by a particular client implementation for constructing its GraphQL operations.
+ In many systems, the information required to communicate with the backend has already been distributed across the client artifacts and the runtime behavior of the application.
+</p>
+
+<p>
+In the context examined here, the reverse engineer's task is to recover that distributed client-side knowledge, establish the relationships between its parts, and represent it in a form that can be analyzed and tested.
+
+</p>
+
+<p>
+That is the underlying problem HarQL was built to investigate.
+</p>
+
+</div>
+
+<section class="research-status" aria-labelledby="research-status-title">
+
+<h2 id="research-status-title">Research Status</h2>
+
+<p>
+This article documents the engineering evolution of HarQL and describes implementation behavior, architectural decisions, observed limitations, and planned directions based on the development history of the system.
+</p>
+
+<p>
+The article distinguishes client-side reconstruction from authoritative server-side schema recovery. The reconstructed information should therefore be interpreted as client-visible operational evidence rather than as a complete representation of a backend GraphQL schema.
+</p>
+
+<p>
+Version 1.0 · Published 2026-08-14
+</p>
+
+</section>
+
+<section class="citation-box" aria-labelledby="citation-title">
+
+<h2 id="citation-title">Citation</h2>
+
+<pre><code>Hasan Habeeb. "From Regex to Reconstruction: The Engineering Evolution of HarQL."
+HarQL Technical Research, Version 1.0, 2026.</code></pre>
+
+</section>
+
+<footer class="article-footer">
+<p>HarQL Technical Research — Version 1.0</p>
+<p>© 2026 Hasan Habeeb — Offensive Security Engineering</p>
+</footer>
+
+</article>
+
+</main>
+
+<script src="../../assets/js/site.js" defer></script>
+
+</body>
+</html>

@@ -1,0 +1,250 @@
+.article-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 150px 32px 100px;
+}
+
+.article-page > article > .article-header {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    min-height: 0;
+
+    margin: 0 0 70px 0;
+    padding: 0;
+
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+
+    color: inherit;
+    text-align: left;
+
+    z-index: auto;
+    overflow: visible;
+}
+
+
+
+.article-kicker {
+    color: var(--accent);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+}
+
+.article-title {
+    font-size: clamp(42px, 6vw, 76px);
+    line-height: 1.02;
+    letter-spacing: -2.5px;
+    margin-bottom: 24px;
+}
+
+.article-subtitle {
+    color: var(--muted);
+    font-size: 20px;
+    max-width: 820px;
+    margin-bottom: 28px;
+}
+
+.article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.article-content {
+    font-size: 17px;
+}
+
+.article-content h2 {
+    margin-top: 76px;
+    margin-bottom: 24px;
+    font-size: 32px;
+    line-height: 1.2;
+}
+
+.article-content h3 {
+    margin-top: 46px;
+    margin-bottom: 18px;
+    font-size: 23px;
+}
+
+.article-content p {
+    color: #c6d6e8;
+    margin-bottom: 22px;
+}
+
+.article-content ul {
+    margin: 0 0 28px 24px;
+    color: #c6d6e8;
+}
+
+.article-content li {
+    margin-bottom: 10px;
+}
+
+.article-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: var(--accent);
+}
+
+.article-content pre {
+    margin: 28px 0;
+    padding: 24px;
+    overflow-x: auto;
+    background: #070d1a;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    line-height: 1.65;
+}
+
+.article-content pre code {
+    color: #d9f7ff;
+    white-space: pre;
+}
+
+.abstract {
+    margin: 36px 0 60px;
+    padding: 30px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    background: rgba(11, 17, 34, 0.65);
+    border-radius: 14px;
+}
+
+.article-footer {
+    margin-top: 90px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+    color: #64748b;
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .article-page {
+        padding: 125px 20px 70px;
+    }
+
+    .article-title {
+        letter-spacing: -1.5px;
+    }
+
+    .article-content {
+        font-size: 16px;
+    }
+
+    .article-content h2 {
+        font-size: 28px;
+    }
+
+    .article-content pre {
+        padding: 18px;
+        font-size: 13px;
+    }
+}
+.citation-box {
+    margin-top: 50px;
+    padding: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.citation-box h2 {
+    margin-top: 0;
+}
+.research-status {
+    margin-top: 70px;
+    padding: 30px;
+    border: 1px solid var(--border);
+    background: rgba(11, 17, 34, 0.55);
+    border-radius: 14px;
+}
+
+.research-status h2 {
+    margin-top: 0;
+}
+.article-content strong {
+    color: var(--text);
+}
+
+.article-content a {
+    color: var(--accent);
+}
+
+.article-content blockquote {
+    margin: 28px 0;
+    padding: 20px 24px;
+    border-left: 3px solid var(--accent);
+    background: rgba(11, 17, 34, 0.55);
+    color: var(--muted);
+}
+
+.research-status {
+    margin-top: 70px;
+    padding: 30px;
+    border: 1px solid var(--border);
+    background: rgba(11, 17, 34, 0.55);
+    border-radius: 14px;
+}
+
+.research-status h2 {
+    margin-top: 0;
+}
+
+.article-toc {
+    margin: 2rem 0 3rem;
+    padding: 1.5rem 1.75rem;
+    border: 1px solid var(--border, #1f2430);
+    border-radius: 12px;
+    background: var(--panel, #12141b);
+}
+
+.article-toc h2 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+}
+
+.article-toc ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.article-toc li {
+    margin: 0.45rem 0;
+}
+
+.article-toc a {
+    text-decoration: none;
+}
+
+.article-toc a:hover {
+    text-decoration: underline;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+.article-content h2,
+.article-content h3 {
+    scroll-margin-top: 90px;
+}
+.article-content h2,
+.article-content h3 {
+    scroll-margin-top: 90px;
+}
+
+.article-content h2:target,
+.article-content h3:target {
+    outline: 1px solid rgba(255, 42, 42, 0.28);
+    outline-offset: 8px;
+    border-radius: 6px;
+}
